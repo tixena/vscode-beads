@@ -23,11 +23,11 @@ interface KanbanBoardProps {
   unfilteredCounts?: Record<BeadStatus, number>;
 }
 
-const COLUMNS: BeadStatus[] = ["open", "in_progress", "blocked", "closed"];
+const COLUMNS: BeadStatus[] = ["open", "in_progress", "blocked", "deferred", "closed"];
 
 export function KanbanBoard({ beads, selectedBeadId, onSelectBead, onUpdateBead, hasActiveFilters, unfilteredCounts }: KanbanBoardProps): React.ReactElement {
   // Track which columns are collapsed (closed is collapsed by default)
-  const [collapsedColumns, setCollapsedColumns] = useState<Set<BeadStatus>>(new Set(["closed"]));
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<BeadStatus>>(new Set(["deferred", "closed"]));
   // Track which column is being dragged over
   const [dragOverColumn, setDragOverColumn] = useState<BeadStatus | null>(null);
   // Optimistic status overrides for instant visual feedback

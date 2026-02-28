@@ -5,13 +5,23 @@
  */
 
 // Re-export types that are shared between extension and webview
-// These match beads canonical statuses: open, in_progress, blocked, closed
-export type BeadStatus = "open" | "in_progress" | "blocked" | "closed";
+// These match beads canonical statuses: open, in_progress, blocked, deferred, closed
+export type BeadStatus = "open" | "in_progress" | "blocked" | "deferred" | "closed";
 
 export type BeadPriority = 0 | 1 | 2 | 3 | 4;
 
 // Dependency relationship types
-export type DependencyType = "blocks" | "parent-child" | "related" | "discovered-from";
+export type DependencyType =
+  | "blocks"
+  | "parent-child"
+  | "related"
+  | "discovered-from"
+  | "tracks"
+  | "until"
+  | "caused-by"
+  | "validates"
+  | "relates-to"
+  | "supersedes";
 
 export interface BeadComment {
   id: number;
@@ -57,9 +67,7 @@ export interface BeadsProject {
   name: string;
   rootPath: string;
   beadsDir: string;
-  dbPath?: string;
-  daemonStatus: "running" | "stopped" | "unknown";
-  daemonPid?: number;
+  connectionStatus: "connected" | "error" | "unknown";
 }
 
 export interface BeadsSummary {
@@ -106,8 +114,6 @@ export type WebviewMessage =
   | { type: "addComment"; beadId: string; text: string }
   | { type: "openBeadDetails"; beadId: string }
   | { type: "viewInGraph"; beadId: string }
-  | { type: "startDaemon" }
-  | { type: "stopDaemon" }
   | { type: "copyBeadId"; beadId: string }
   | { type: "openFile"; filePath: string; line?: number };
 
@@ -124,6 +130,7 @@ export const STATUS_LABELS: Record<BeadStatus, string> = {
   open: "open",
   in_progress: "in progress",
   blocked: "blocked",
+  deferred: "deferred",
   closed: "closed",
 };
 
@@ -151,10 +158,11 @@ export const STATUS_COLORS: Record<BeadStatus, string> = {
   open: "#10b981",      // green - ready to work
   in_progress: "#3b82f6", // blue
   blocked: "#ef4444",   // red
+  deferred: "#f59e0b",  // amber
   closed: "#6b7280",    // gray
 };
 
-export type BeadType = "bug" | "feature" | "task" | "epic" | "chore" | "merge-request" | "molecule";
+export type BeadType = "bug" | "feature" | "task" | "epic" | "chore" | "decision" | "gate" | "convoy" | "merge-request" | "molecule";
 
 export const TYPE_LABELS: Record<BeadType, string> = {
   bug: "bug",
@@ -162,6 +170,9 @@ export const TYPE_LABELS: Record<BeadType, string> = {
   task: "task",
   epic: "epic",
   chore: "chore",
+  decision: "decision",
+  gate: "gate",
+  convoy: "convoy",
   "merge-request": "merge-request",
   molecule: "molecule",
 };
@@ -172,6 +183,9 @@ export const TYPE_COLORS: Record<BeadType, string> = {
   task: "#eab308",          // yellow
   epic: "#9333ea",          // purple
   chore: "#2563eb",         // blue
+  decision: "#d946ef",      // fuchsia
+  gate: "#f97316",          // orange
+  convoy: "#0d9488",        // teal
   "merge-request": "#0ea5e9", // sky blue
   molecule: "#14b8a6",      // teal
 };
@@ -182,6 +196,9 @@ export const TYPE_TEXT_COLORS: Record<BeadType, string> = {
   task: "#1a1a1a",          // dark on yellow
   epic: "#ffffff",
   chore: "#ffffff",
+  decision: "#ffffff",
+  gate: "#ffffff",
+  convoy: "#ffffff",
   "merge-request": "#ffffff",
   molecule: "#ffffff",
 };
@@ -198,8 +215,11 @@ export const TYPE_SORT_ORDER: Record<string, number> = {
   bug: 2,
   task: 3,
   chore: 4,
-  "merge-request": 5,
-  molecule: 6,
+  decision: 5,
+  gate: 6,
+  convoy: 7,
+  "merge-request": 8,
+  molecule: 9,
 };
 
 // Default sort order for unknown types (sorts after known types)
@@ -216,6 +236,20 @@ export function sortLabels(labels: string[] | undefined): string[] {
   if (!labels) return [];
   return [...labels].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 }
+
+// Dependency type labels for display
+export const DEPENDENCY_TYPE_LABELS: Record<string, string> = {
+  blocks: "blocks",
+  "parent-child": "parent-child",
+  related: "related",
+  "discovered-from": "discovered-from",
+  tracks: "tracks",
+  until: "until",
+  "caused-by": "caused-by",
+  validates: "validates",
+  "relates-to": "relates-to",
+  supersedes: "supersedes",
+};
 
 // VS Code API interface for webview
 declare global {

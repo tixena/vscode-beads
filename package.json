@@ -1,9 +1,9 @@
 {
-  "name": "vscode-beads",
-  "displayName": "Beads",
-  "description": "VS Code extension for managing Beads issues",
-  "version": "0.12.0",
-  "publisher": "planet57",
+  "name": "vscode-beads-tixena-labs",
+  "displayName": "Beads (Tixena Labs)",
+  "description": "VS Code extension for managing Beads issues. Unofficial fork of jdillon/vscode-beads with CLI backend support.",
+  "version": "0.13.0-dev.2",
+  "publisher": "tixena-labs",
   "license": "Apache-2.0",
   "icon": "resources/icon.png",
   "files": [
@@ -15,7 +15,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/jdillon/vscode-beads"
+    "url": "https://github.com/tixena/vscode-beads"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -93,29 +93,24 @@
         "icon": "$(add)"
       },
       {
-        "command": "beads.startDaemon",
-        "title": "Beads: Start Daemon",
-        "icon": "$(play)"
+        "command": "beads.doltSync",
+        "title": "Beads: Sync (Pull + Push)",
+        "icon": "$(sync)"
       },
       {
-        "command": "beads.stopDaemon",
-        "title": "Beads: Stop Daemon",
-        "icon": "$(debug-stop)"
+        "command": "beads.doltPush",
+        "title": "Beads: Push to Remote",
+        "icon": "$(cloud-upload)"
       },
       {
-        "command": "beads.restartDaemon",
-        "title": "Beads: Restart Daemon",
-        "icon": "$(debug-restart)"
+        "command": "beads.doltPull",
+        "title": "Beads: Pull from Remote",
+        "icon": "$(cloud-download)"
       },
       {
-        "command": "beads.checkDaemonStatus",
-        "title": "Beads: Check Daemon Status",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "beads.showDaemonMenu",
-        "title": "Beads: Daemon Menu",
-        "icon": "$(server-process)"
+        "command": "beads.showBeadsMenu",
+        "title": "Beads: Menu",
+        "icon": "$(beaker)"
       },
       {
         "command": "beads.copyBeadId",
@@ -149,11 +144,6 @@
           "type": "string",
           "default": "bd",
           "description": "Path to the bd CLI executable"
-        },
-        "beads.autoStartDaemon": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically start daemon when switching to a project"
         },
         "beads.refreshInterval": {
           "type": "number",
@@ -210,7 +200,7 @@
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
-    "lucide-react": "^0.563.0",
+    "lucide-react": "^0.575.0",
     "marked": "^17.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

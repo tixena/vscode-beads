@@ -11,7 +11,7 @@
 import * as vscode from "vscode";
 import { BaseViewProvider } from "./BaseViewProvider";
 import { BeadsProjectManager } from "../backend/BeadsProjectManager";
-import { WebviewToExtensionMessage, issueToWebviewBead } from "../backend/types";
+import { WebviewToExtensionMessage } from "../backend/types";
 import { Logger } from "../utils/logger";
 
 export class BeadDetailsViewProvider extends BaseViewProvider {
@@ -68,7 +68,7 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
     // overwriting newer data when multiple refreshes occur in rapid succession
     const thisRequest = ++this.loadSequence;
 
-    const client = this.projectManager.getClient();
+    const backend = this.projectManager.getBackend();
     const activeProjectId = this.projectManager.getActiveProject()?.id;
 
     // Clear selection if project changed
@@ -77,7 +77,7 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
       this.currentProjectId = activeProjectId || null;
     }
 
-    if (!client || !this.currentBeadId) {
+    if (!backend || !this.currentBeadId) {
       this.postMessage({ type: "setBead", bead: null });
       this.setLoading(false);
       return;
@@ -87,14 +87,8 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
     this.setError(null);
 
     try {
-      // Fetch issue and comments in parallel
-      const [issue, comments] = await Promise.all([
-        client.show(this.currentBeadId),
-        client.listComments(this.currentBeadId).catch((err) => {
-          this.log.warn(`Failed to fetch comments: ${err}`);
-          return [];
-        }),
-      ]);
+      // Fetch issue with deps and comments in parallel
+      const bead = await backend.showFull(this.currentBeadId);
 
       // Check if a newer request has started - if so, discard this stale response
       if (thisRequest !== this.loadSequence) {
@@ -102,21 +96,8 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
         return;
       }
 
-      const commentsArray = comments || [];
-      this.log.debug(`Loaded ${commentsArray.length} comments for ${this.currentBeadId}`);
-      if (issue) {
-        // Merge comments into issue data
-        const issueWithComments = {
-          ...issue,
-          comments: commentsArray as Array<{ id: number; author: string; text: string; created_at: string }>,
-        };
-        const bead = issueToWebviewBead(issueWithComments);
-        if (bead) {
-          this.postMessage({ type: "setBead", bead });
-        } else {
-          this.setError("Invalid bead status");
-          this.postMessage({ type: "setBead", bead: null });
-        }
+      if (bead) {
+        this.postMessage({ type: "setBead", bead });
       } else {
         this.setError("Bead not found");
         this.postMessage({ type: "setBead", bead: null });
@@ -128,7 +109,7 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
       }
       this.setError(String(err));
       this.postMessage({ type: "setBead", bead: null });
-      this.handleDaemonError("Failed to load bead details", err);
+      this.log.error(`Failed to load bead details: ${err}`);
     } finally {
       // Only update loading state if this is still the current request
       if (thisRequest === this.loadSequence) {
@@ -140,8 +121,8 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
   protected async handleCustomMessage(
     message: WebviewToExtensionMessage
   ): Promise<void> {
-    const client = this.projectManager.getClient();
-    if (!client) {
+    const backend = this.projectManager.getBackend();
+    if (!backend) {
       return;
     }
 
@@ -150,34 +131,35 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
         this.log.debug(`Updating bead ${message.beadId}: ${JSON.stringify(message.updates)}`);
 
         try {
-          // Map webview field names (camelCase) to daemon API field names (snake_case)
-          const {
-            labels,
-            externalRef,
-            acceptanceCriteria,
-            estimatedMinutes,
-            ...rest
-          } = message.updates;
-          const updateArgs: Record<string, unknown> = {
-            id: message.beadId,
-            ...rest,
-          };
-          // Daemon uses set_labels instead of labels
-          if (labels !== undefined) {
-            updateArgs.set_labels = labels;
+          // Map webview field names (camelCase) to CLI field names (snake_case/kebab-case)
+          const updates = message.updates as Record<string, unknown>;
+          const updateArgs: Record<string, unknown> = { id: message.beadId };
+
+          for (const [key, value] of Object.entries(updates)) {
+            switch (key) {
+              case "labels":
+                updateArgs.set_labels = value;
+                break;
+              case "externalRef":
+                updateArgs.external_ref = value;
+                break;
+              case "acceptanceCriteria":
+                updateArgs.acceptance_criteria = value;
+                break;
+              case "estimatedMinutes":
+                updateArgs.estimated_minutes = value;
+                break;
+              case "type":
+                updateArgs.issue_type = value;
+                break;
+              default:
+                updateArgs[key] = value;
+            }
           }
-          // Map camelCase to snake_case
-          if (externalRef !== undefined) {
-            updateArgs.external_ref = externalRef;
-          }
-          if (acceptanceCriteria !== undefined) {
-            updateArgs.acceptance_criteria = acceptanceCriteria;
-          }
-          if (estimatedMinutes !== undefined) {
-            updateArgs.estimated_minutes = estimatedMinutes;
-          }
-          await client.update(updateArgs as unknown as Parameters<typeof client.update>[0]);
-          // Data will refresh via mutation events
+
+          await backend.update(updateArgs as Parameters<typeof backend.update>[0]);
+          // Refresh to show changes
+          await this.loadData();
         } catch (err) {
           vscode.window.showErrorMessage(`Failed to update bead: ${err}`);
         }
@@ -188,12 +170,13 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
           // When reverse=true, swap direction: target depends on current bead
           const fromId = message.reverse ? message.targetId : message.beadId;
           const toId = message.reverse ? message.beadId : message.targetId;
-          await client.addDependency({
+          await backend.addDependency({
             from_id: fromId,
             to_id: toId,
             dep_type: message.dependencyType,
           });
-          // Data will refresh via mutation events
+          // Refresh to show changes
+          await this.loadData();
         } catch (err) {
           vscode.window.showErrorMessage(`Failed to add dependency: ${err}`);
         }
@@ -201,11 +184,9 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
 
       case "removeDependency":
         try {
-          await client.removeDependency({
-            from_id: message.beadId,
-            to_id: message.dependsOnId,
-          });
-          // Data will refresh via mutation events
+          await backend.removeDependency(message.beadId, message.dependsOnId);
+          // Refresh to show changes
+          await this.loadData();
         } catch (err) {
           vscode.window.showErrorMessage(`Failed to remove dependency: ${err}`);
         }
@@ -213,13 +194,7 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
 
       case "addComment":
         try {
-          // Get username from environment or default
-          const author = process.env.USER || process.env.USERNAME || "vscode";
-          await client.addComment({
-            id: message.beadId,
-            author,
-            text: message.text,
-          });
+          await backend.addComment(message.beadId, message.text);
           // Refresh to show new comment
           await this.loadData();
         } catch (err) {

@@ -70,7 +70,6 @@ interface IssuesViewProps {
   onSelectProject: (projectId: string) => void;
   onSelectBead: (beadId: string) => void;
   onUpdateBead: (beadId: string, updates: Partial<Bead>) => void;
-  onStartDaemon: () => void;
   onRetry: () => void;
 }
 
@@ -95,9 +94,10 @@ interface FilterPreset {
 
 const FILTER_PRESETS: FilterPreset[] = [
   { id: "all", label: "All", statuses: [] },
-  { id: "not-closed", label: "Not Closed", statuses: ["open", "in_progress", "blocked"] },
+  { id: "not-closed", label: "Not Closed", statuses: ["open", "in_progress", "blocked", "deferred"] },
   { id: "active", label: "Active", statuses: ["in_progress", "blocked"] },
   { id: "blocked", label: "Blocked", statuses: ["blocked"] },
+  { id: "deferred", label: "Deferred", statuses: ["deferred"] },
   { id: "closed", label: "Closed", statuses: ["closed"] },
 ];
 
@@ -114,10 +114,8 @@ export function IssuesView({
   onSelectProject,
   onSelectBead,
   onUpdateBead,
-  onStartDaemon,
   onRetry,
 }: IssuesViewProps): React.ReactElement {
-  const isSocketError = error?.includes("ENOENT") || error?.includes("socket");
 
   // Persisted column state (sorting, visibility, order)
   const defaultVisibility = {
@@ -140,7 +138,7 @@ export function IssuesView({
 
   // Non-persisted TanStack state
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
-    { id: "status", value: ["open", "in_progress", "blocked"] }, // Default: Not Closed
+    { id: "status", value: ["open", "in_progress", "blocked", "deferred"] }, // Default: Not Closed
   ]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
@@ -556,7 +554,7 @@ export function IssuesView({
 
   // Unfiltered counts per status (for kanban empty state messaging)
   const unfilteredStatusCounts = useMemo(() => {
-    const counts: Record<BeadStatus, number> = { open: 0, in_progress: 0, blocked: 0, closed: 0 };
+    const counts: Record<BeadStatus, number> = { open: 0, in_progress: 0, blocked: 0, deferred: 0, closed: 0 };
     for (const bead of beads) {
       if (bead.status in counts) {
         counts[bead.status as BeadStatus]++;
@@ -875,7 +873,6 @@ export function IssuesView({
         <ErrorMessage
           message={error}
           onRetry={onRetry}
-          onStartDaemon={isSocketError ? onStartDaemon : undefined}
         />
       )}
 

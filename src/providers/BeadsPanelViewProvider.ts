@@ -36,8 +36,8 @@ export class BeadsPanelViewProvider extends BaseViewProvider {
   }
 
   protected async loadData(): Promise<void> {
-    const client = this.projectManager.getClient();
-    if (!client) {
+    const backend = this.projectManager.getBackend();
+    if (!backend) {
       this.postMessage({ type: "setBeads", beads: [] });
       return;
     }
@@ -46,13 +46,13 @@ export class BeadsPanelViewProvider extends BaseViewProvider {
     this.setError(null);
 
     try {
-      const issues = await client.list();
+      const issues = await backend.list();
       const beads = issues.map(issueToWebviewBead).filter((b): b is Bead => b !== null);
       this.postMessage({ type: "setBeads", beads });
     } catch (err) {
       this.setError(String(err));
       this.postMessage({ type: "setBeads", beads: [] });
-      this.handleDaemonError("Failed to load beads", err);
+      this.log.error(`Failed to load beads: ${err}`);
     } finally {
       this.setLoading(false);
     }
@@ -61,19 +61,43 @@ export class BeadsPanelViewProvider extends BaseViewProvider {
   protected async handleCustomMessage(
     message: WebviewToExtensionMessage
   ): Promise<void> {
-    const client = this.projectManager.getClient();
-    if (!client) {
+    const backend = this.projectManager.getBackend();
+    if (!backend) {
       return;
     }
 
     switch (message.type) {
       case "updateBead":
         try {
-          await client.update({
-            id: message.beadId,
-            ...message.updates,
-          });
-          // Data will refresh via mutation events
+          // Map webview field names to CLI field names
+          const updates = message.updates as Record<string, unknown>;
+          const updateArgs: Record<string, unknown> = { id: message.beadId };
+
+          for (const [key, value] of Object.entries(updates)) {
+            switch (key) {
+              case "labels":
+                updateArgs.set_labels = value;
+                break;
+              case "externalRef":
+                updateArgs.external_ref = value;
+                break;
+              case "acceptanceCriteria":
+                updateArgs.acceptance_criteria = value;
+                break;
+              case "estimatedMinutes":
+                updateArgs.estimated_minutes = value;
+                break;
+              case "type":
+                updateArgs.issue_type = value;
+                break;
+              default:
+                updateArgs[key] = value;
+            }
+          }
+
+          await backend.update(updateArgs as Parameters<typeof backend.update>[0]);
+          // Refresh to show changes (no mutation events in CLI mode)
+          await this.loadData();
         } catch (err) {
           vscode.window.showErrorMessage(`Failed to update bead: ${err}`);
         }

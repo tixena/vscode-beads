@@ -26,8 +26,8 @@ export class DashboardViewProvider extends BaseViewProvider {
   }
 
   protected async loadData(): Promise<void> {
-    const client = this.projectManager.getClient();
-    if (!client) {
+    const backend = this.projectManager.getBackend();
+    if (!backend) {
       this.postMessage({
         type: "setSummary",
         summary: {
@@ -36,6 +36,7 @@ export class DashboardViewProvider extends BaseViewProvider {
             open: 0,
             in_progress: 0,
             blocked: 0,
+            deferred: 0,
             closed: 0,
           },
           byPriority: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 },
@@ -53,7 +54,7 @@ export class DashboardViewProvider extends BaseViewProvider {
 
     try {
       // Get all issues and compute summary
-      const issues = await client.list();
+      const issues = await backend.list();
       const beads = issues.map(issueToWebviewBead).filter((b): b is Bead => b !== null);
 
       // Compute summary
@@ -61,6 +62,7 @@ export class DashboardViewProvider extends BaseViewProvider {
         open: 0,
         in_progress: 0,
         blocked: 0,
+        deferred: 0,
         closed: 0,
       };
 
@@ -99,7 +101,7 @@ export class DashboardViewProvider extends BaseViewProvider {
       this.postMessage({ type: "setBeads", beads: importantBeads });
     } catch (err) {
       this.setError(String(err));
-      this.handleDaemonError("Failed to load dashboard", err);
+      this.log.error(`Failed to load dashboard: ${err}`);
     } finally {
       this.setLoading(false);
     }

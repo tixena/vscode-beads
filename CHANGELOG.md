@@ -9,9 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-### Fixed
+- Dolt sync operations: Push, Pull, and Sync (pull+push) commands
+- `deferred` status support with amber color, kanban column, and filter presets
+- New bead types: `decision`, `gate`, `convoy` (plus existing `merge-request`, `molecule`)
+- New dependency types: `tracks`, `until`, `caused-by`, `validates`, `relates-to`, `supersedes`
+- Status bar menu with Refresh, Sync, Push, Pull, and Show Logs
 
 ### Changed
+
+- **Breaking**: Replaced daemon RPC backend with CLI-spawning backend (`BeadsCliBackend`)
+- Removed all daemon lifecycle management (start/stop/restart daemon commands)
+- Extension now uses `bd` CLI directly via `child_process.spawn` with `--json` output
+- Dependencies and comments fetched separately via `bd dep list` and `bd comments`
+- CLI field `owner` mapped to internal `assignee` for compatibility
+- Project connection status replaces daemon status indicators
+- Periodic polling replaces daemon mutation watching for change detection
+- Removed `beads.autoStartDaemon` setting (no longer applicable)
+
+### Removed
+
+- `BeadsDaemonClient.ts` (670 lines of socket RPC code)
+- Commands: `beads.startDaemon`, `beads.stopDaemon`, `beads.restartDaemon`, `beads.checkDaemonStatus`, `beads.showDaemonMenu`
+- "Start Daemon" button from error states
 
 ## [0.12.0] - 2026-01-31
 

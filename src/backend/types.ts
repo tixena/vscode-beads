@@ -8,6 +8,7 @@
  * - "open" -> "open"
  * - "in_progress" / "in-progress" / "active" -> "in_progress"
  * - "blocked" -> "blocked"
+ * - "deferred" -> "deferred"
  * - "closed" / "done" / "completed" / "cancelled" -> "closed"
  * - anything else -> throws error
  *
@@ -17,8 +18,8 @@
  */
 
 // Bead status values used in the UI
-// Matches beads canonical statuses: open, in_progress, blocked, closed
-export type BeadStatus = "open" | "in_progress" | "blocked" | "closed";
+// Matches beads canonical statuses: open, in_progress, blocked, deferred, closed
+export type BeadStatus = "open" | "in_progress" | "blocked" | "deferred" | "closed";
 
 // Priority levels (0 = highest/critical, 4 = lowest/none)
 export type BeadPriority = 0 | 1 | 2 | 3 | 4;
@@ -37,6 +38,7 @@ export const STATUS_LABELS: Record<BeadStatus, string> = {
   open: "Open",
   in_progress: "In Progress",
   blocked: "Blocked",
+  deferred: "Deferred",
   closed: "Closed",
 };
 
@@ -48,7 +50,7 @@ export interface Bead {
   design?: string; // Design notes
   acceptanceCriteria?: string; // Acceptance criteria
   notes?: string; // Working notes
-  type?: string; // Beads issue_type: bug, feature, task, epic, chore
+  type?: string; // Beads issue_type: bug, feature, task, epic, chore, decision, gate, convoy, molecule, merge-request
   priority?: BeadPriority;
   status: BeadStatus;
   assignee?: string;
@@ -80,7 +82,17 @@ export interface BeadComment {
 }
 
 // Dependency relationship types
-export type DependencyType = "blocks" | "parent-child" | "related" | "discovered-from";
+export type DependencyType =
+  | "blocks"
+  | "parent-child"
+  | "related"
+  | "discovered-from"
+  | "tracks"
+  | "until"
+  | "caused-by"
+  | "validates"
+  | "relates-to"
+  | "supersedes";
 
 // Dependency reference with summary info for display
 export interface BeadDependency {
@@ -92,8 +104,8 @@ export interface BeadDependency {
   priority?: BeadPriority;
 }
 
-// Daemon API dependency format (before normalization)
-export interface DaemonBeadDependency {
+// CLI dependency format (from `bd dep list --json`)
+export interface CliBeadDependency {
   id: string;
   dependency_type: string; // relationship: blocks, related, parent-child, etc.
   issue_type?: string;     // bead type: bug, feature, task, epic, chore
@@ -108,28 +120,15 @@ export interface BeadsProject {
   name: string; // Human-friendly label (folder name or config display name)
   rootPath: string; // Project root (VS Code workspace folder)
   beadsDir: string; // Path to .beads directory
-  dbPath?: string; // Path to beads.db (if discovered)
-  daemonStatus: "running" | "stopped" | "unknown";
-  daemonPid?: number;
+  connectionStatus: "connected" | "error" | "unknown";
 }
 
 // Result from `bd info --json`
 export interface BeadsInfo {
   version?: string;
   database?: string;
-  daemon_status?: string;
-  daemon_pid?: number;
+  mode?: string;
   issue_count?: number;
-  [key: string]: unknown;
-}
-
-// Result from `bd daemons list --json`
-export interface DaemonInfo {
-  pid: number;
-  database: string;
-  working_dir?: string;
-  status?: string;
-  started_at?: string;
   [key: string]: unknown;
 }
 
@@ -186,9 +185,7 @@ export type WebviewToExtensionMessage =
   | { type: "openBeadDetails"; beadId: string }
   | { type: "viewInGraph"; beadId: string }
   | { type: "copyBeadId"; beadId: string }
-  | { type: "openFile"; filePath: string; line?: number }
-  | { type: "startDaemon" }
-  | { type: "stopDaemon" };
+  | { type: "openFile"; filePath: string; line?: number };
 
 // CLI command result
 export interface CommandResult<T = unknown> {
@@ -237,6 +234,8 @@ export function normalizeStatus(status: string | undefined): BeadStatus | null {
       return "in_progress";
     case "blocked":
       return "blocked";
+    case "deferred":
+      return "deferred";
     case "closed":
     case "done":
     case "completed":
@@ -294,9 +293,11 @@ export function normalizeBead(raw: Record<string, unknown>): Bead | null {
     status,
     assignee: raw.assignee
       ? String(raw.assignee)
-      : raw.assigned_to
-        ? String(raw.assigned_to)
-        : undefined,
+      : raw.owner
+        ? String(raw.owner)
+        : raw.assigned_to
+          ? String(raw.assigned_to)
+          : undefined,
     labels: Array.isArray(raw.labels)
       ? raw.labels.map(String)
       : raw.tags
@@ -329,8 +330,10 @@ export function normalizeBead(raw: Record<string, unknown>): Bead | null {
 }
 
 /**
- * Converts a daemon Issue to webview Bead format.
+ * Converts a CLI issue (from `bd show --json` or `bd list --json`) to webview Bead format.
  * Returns null if status is invalid (bead will be skipped).
+ *
+ * Handles both old daemon format (assignee) and new CLI format (owner).
  */
 export function issueToWebviewBead(issue: {
   id: string;
@@ -343,14 +346,15 @@ export function issueToWebviewBead(issue: {
   priority: number;
   issue_type: string;
   assignee?: string;
+  owner?: string;
   labels?: string[];
   estimated_minutes?: number;
   external_ref?: string;
   created_at: string;
   updated_at: string;
   closed_at?: string;
-  dependencies?: DaemonBeadDependency[];
-  dependents?: DaemonBeadDependency[];
+  dependencies?: CliBeadDependency[];
+  dependents?: CliBeadDependency[];
   comments?: Array<{ id: number; author: string; text: string; created_at: string }>;
 }): Bead | null {
   const status = normalizeStatus(issue.status);
@@ -367,7 +371,7 @@ export function issueToWebviewBead(issue: {
     type: issue.issue_type,
     priority: normalizePriority(issue.priority),
     status,
-    assignee: issue.assignee,
+    assignee: issue.assignee || issue.owner,
     labels: issue.labels,
     estimatedMinutes: issue.estimated_minutes,
     externalRef: issue.external_ref,

@@ -30,7 +30,7 @@ export function ProjectSelector({
     return (
       <div className="project-selector single">
         <span className="project-name">{activeProject?.name || projects[0].name}</span>
-        <DaemonBadge status={activeProject?.daemonStatus || "unknown"} />
+        <ConnectionBadge status={activeProject?.connectionStatus || "unknown"} />
       </div>
     );
   }
@@ -48,22 +48,23 @@ export function ProjectSelector({
           </option>
         ))}
       </select>
-      <DaemonBadge status={activeProject?.daemonStatus || "unknown"} />
+      <ConnectionBadge status={activeProject?.connectionStatus || "unknown"} />
     </div>
   );
 }
 
-interface DaemonBadgeProps {
-  status: "running" | "stopped" | "unknown";
+interface ConnectionBadgeProps {
+  status: "connected" | "error" | "unknown";
 }
 
-function DaemonBadge({ status }: DaemonBadgeProps): React.ReactElement {
-  const statusClass = `daemon-badge daemon-${status}`;
+function ConnectionBadge({ status }: ConnectionBadgeProps): React.ReactElement {
+  // Map to CSS classes that already exist (connected=running, error=stopped)
+  const cssClass = status === "connected" ? "daemon-running" : status === "error" ? "daemon-stopped" : "daemon-unknown";
   const statusText =
-    status === "running" ? "●" : status === "stopped" ? "○" : "?";
+    status === "connected" ? "●" : status === "error" ? "○" : "?";
 
   return (
-    <span className={statusClass} title={`Daemon: ${status}`}>
+    <span className={`daemon-badge ${cssClass}`} title={`Status: ${status}`}>
       {statusText}
     </span>
   );

@@ -70,42 +70,52 @@ const DEPENDENCY_TYPE_OPTIONS: { value: DependencyType; direction: DependencyDir
   { value: "parent-child", direction: "forward", label: "Parent" },
   { value: "parent-child", direction: "reverse", label: "Child" },
   { value: "related", direction: "forward", label: "Related" },
+  { value: "relates-to", direction: "forward", label: "Relates To" },
   { value: "discovered-from", direction: "forward", label: "Discovered From" },
   { value: "discovered-from", direction: "reverse", label: "Spawned" },
+  { value: "tracks", direction: "forward", label: "Tracks" },
+  { value: "validates", direction: "forward", label: "Validates" },
+  { value: "caused-by", direction: "forward", label: "Caused By" },
+  { value: "supersedes", direction: "forward", label: "Supersedes" },
 ];
 
 // Labels for dependency sections based on array (direction) and type
-const DEPENDENCY_LABELS: Record<"dependsOn" | "blocks", Record<DependencyType, string>> = {
+const DEPENDENCY_LABELS: Record<"dependsOn" | "blocks", Partial<Record<DependencyType, string>>> = {
   dependsOn: {
     "blocks": "Blocked By",
     "parent-child": "Parent",
     "discovered-from": "Discovered From",
     "related": "Related To",
+    "relates-to": "Relates To",
+    "tracks": "Tracks",
+    "until": "Until",
+    "caused-by": "Caused By",
+    "validates": "Validates",
+    "supersedes": "Supersedes",
   },
   blocks: {
     "blocks": "Blocks",
     "parent-child": "Children",
     "discovered-from": "Spawned",
     "related": "Related From",
+    "relates-to": "Related From",
+    "tracks": "Tracked By",
+    "until": "Unblocked By",
+    "caused-by": "Causes",
+    "validates": "Validated By",
+    "supersedes": "Superseded By",
   },
 };
 
 // Group dependencies by their relationship type
-function groupDependenciesByType(deps: BeadDependency[]): Record<DependencyType, BeadDependency[]> {
-  const groups: Record<DependencyType, BeadDependency[]> = {
-    "blocks": [],
-    "parent-child": [],
-    "discovered-from": [],
-    "related": [],
-  };
+function groupDependenciesByType(deps: BeadDependency[]): Partial<Record<DependencyType, BeadDependency[]>> {
+  const groups: Partial<Record<DependencyType, BeadDependency[]>> = {};
   for (const dep of deps) {
     const depType = dep.dependencyType || "blocks"; // fallback to blocks if unknown
-    if (groups[depType]) {
-      groups[depType].push(dep);
-    } else {
-      // Unknown dependency type - fallback to related
-      groups["related"].push(dep);
+    if (!groups[depType]) {
+      groups[depType] = [];
     }
+    groups[depType]!.push(dep);
   }
   return groups;
 }
@@ -624,7 +634,7 @@ export function DetailsView({
         const hasBlocks = (displayBead.blocks?.length || 0) > 0;
 
         // Define rendering order: hierarchy first, then workflow, then provenance, then related
-        const typeOrder: DependencyType[] = ["parent-child", "blocks", "discovered-from", "related"];
+        const typeOrder: DependencyType[] = ["parent-child", "blocks", "discovered-from", "related", "relates-to", "tracks", "until", "caused-by", "validates", "supersedes"];
 
         // Helper to render a dependency item
         const renderDepItem = (dep: BeadDependency, direction: "dependsOn" | "blocks", allowRemove: boolean) => (
@@ -658,14 +668,14 @@ export function DetailsView({
           <>
             {/* Render dependencies interleaved by type: parent→children, then blocked by→blocks, etc. */}
             {typeOrder.map((depType) => {
-              const dependsOnDeps = dependsOnGroups[depType];
-              const blocksDeps = blocksGroups[depType];
+              const dependsOnDeps = dependsOnGroups[depType] || [];
+              const blocksDeps = blocksGroups[depType] || [];
               if (dependsOnDeps.length === 0 && blocksDeps.length === 0) return null;
               return (
                 <React.Fragment key={depType}>
                   {dependsOnDeps.length > 0 && (
                     <div className="details-section">
-                      <h4>{DEPENDENCY_LABELS.dependsOn[depType]}</h4>
+                      <h4>{DEPENDENCY_LABELS.dependsOn[depType] || depType}</h4>
                       <div className="deps-list">
                         {sortDependencies(dependsOnDeps).map((dep) => renderDepItem(dep, "dependsOn", true))}
                       </div>
@@ -673,7 +683,7 @@ export function DetailsView({
                   )}
                   {blocksDeps.length > 0 && (
                     <div className="details-section">
-                      <h4>{DEPENDENCY_LABELS.blocks[depType]}</h4>
+                      <h4>{DEPENDENCY_LABELS.blocks[depType] || depType}</h4>
                       <div className="deps-list">
                         {sortDependencies(blocksDeps).map((dep) => renderDepItem(dep, "blocks", false))}
                       </div>

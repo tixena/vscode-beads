@@ -1,7 +1,7 @@
 /**
  * ProjectDropdown Component
  *
- * Custom dropdown for selecting projects with daemon status indicators.
+ * Custom dropdown for selecting projects with connection status indicators.
  * Uses generic Dropdown component for consistent behavior.
  */
 
@@ -34,7 +34,7 @@ export function ProjectDropdown({
 
   const triggerContent = (
     <>
-      <DaemonDot status={activeProject?.daemonStatus || "unknown"} />
+      <ConnectionDot status={activeProject?.connectionStatus || "unknown"} />
       <span className="project-dropdown-name">
         {activeProject?.name || projects[0]?.name || "Select project"}
       </span>
@@ -57,7 +57,7 @@ export function ProjectDropdown({
           onClick={() => handleSelect(project.id)}
           title={project.rootPath}
         >
-          <DaemonDot status={project.daemonStatus || "unknown"} />
+          <ConnectionDot status={project.connectionStatus || "unknown"} />
           <span className="project-dropdown-item-name">{project.name}</span>
         </DropdownItem>
       ))}
@@ -65,15 +65,17 @@ export function ProjectDropdown({
   );
 }
 
-interface DaemonDotProps {
-  status: "running" | "stopped" | "unknown";
+interface ConnectionDotProps {
+  status: "connected" | "error" | "unknown";
 }
 
-function DaemonDot({ status }: DaemonDotProps): React.ReactElement {
+function ConnectionDot({ status }: ConnectionDotProps): React.ReactElement {
+  // Map to CSS classes that already exist (connected=running, error=stopped)
+  const cssClass = status === "connected" ? "running" : status === "error" ? "stopped" : "unknown";
   return (
     <span
-      className={`daemon-dot ${status}`}
-      title={`Daemon: ${status}`}
+      className={`daemon-dot ${cssClass}`}
+      title={`Status: ${status}`}
     />
   );
 }
