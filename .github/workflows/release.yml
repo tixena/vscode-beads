@@ -55,10 +55,14 @@ jobs:
         run: npx @vscode/vsce package --no-dependencies
 
       - name: Publish to VS Code Marketplace
+        if: secrets.VSCE_PAT != ''
         run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }} --no-dependencies
+        continue-on-error: true
 
       - name: Publish to Open VSX
+        if: secrets.OVSX_PAT != ''
         run: npx ovsx publish *.vsix -p ${{ secrets.OVSX_PAT }}
+        continue-on-error: true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -67,5 +71,5 @@ jobs:
           files: "*.vsix"
           generate_release_notes: false
           body: |
-            See [CHANGELOG.md](https://github.com/jdillon/vscode-beads/blob/main/CHANGELOG.md) for release notes.
+            See [CHANGELOG.md](https://github.com/tixena/vscode-beads/blob/main/CHANGELOG.md) for release notes.
           draft: false
