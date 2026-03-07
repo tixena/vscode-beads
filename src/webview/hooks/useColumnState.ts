@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { SortingState, VisibilityState, ColumnOrderState } from "@tanstack/react-table";
+import type { ColumnOrderState, SortingState, VisibilityState } from "@tanstack/react-table";
+import { useEffect, useMemo, useState } from "react";
 import { vscode } from "../types";
 
 /**
@@ -56,18 +56,12 @@ interface UseColumnStateReturn {
  * });
  */
 export function useColumnState(options: UseColumnStateOptions = {}): UseColumnStateReturn {
-  const {
-    defaultSorting = [],
-    defaultVisibility = {},
-    defaultOrder = [],
-  } = options;
+  const { defaultSorting = [], defaultVisibility = {}, defaultOrder = [] } = options;
 
   // Load persisted state once on mount
   const savedState = useMemo(() => vscode.getState() as PersistedState | undefined, []);
 
-  const [sorting, setSorting] = useState<SortingState>(
-    savedState?.sorting ?? defaultSorting
-  );
+  const [sorting, setSorting] = useState<SortingState>(savedState?.sorting ?? defaultSorting);
 
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
     savedState?.columnVisibility ?? defaultVisibility

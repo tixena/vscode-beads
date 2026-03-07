@@ -8,20 +8,22 @@
  * - Quick access to important beads
  */
 
-import * as vscode from "vscode";
+import type * as vscode from "vscode";
+import type { BeadsProjectManager } from "../backend/BeadsProjectManager";
+import {
+  type Bead,
+  type BeadPriority,
+  type BeadStatus,
+  type BeadsSummary,
+  issueToWebviewBead,
+} from "../backend/types";
+import type { Logger } from "../utils/logger";
 import { BaseViewProvider } from "./BaseViewProvider";
-import { BeadsProjectManager } from "../backend/BeadsProjectManager";
-import { Bead, BeadsSummary, issueToWebviewBead, BeadStatus, BeadPriority } from "../backend/types";
-import { Logger } from "../utils/logger";
 
 export class DashboardViewProvider extends BaseViewProvider {
   protected readonly viewType = "beadsDashboard";
 
-  constructor(
-    extensionUri: vscode.Uri,
-    projectManager: BeadsProjectManager,
-    logger: Logger
-  ) {
+  constructor(extensionUri: vscode.Uri, projectManager: BeadsProjectManager, logger: Logger) {
     super(extensionUri, projectManager, logger.child("Dashboard"));
   }
 

@@ -5,20 +5,21 @@
  * Manages global state and message passing with the extension.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import {
-  Bead,
-  BeadsProject,
-  BeadsSummary,
-  ExtensionMessage,
-  WebviewSettings,
-  vscode,
-} from "./types";
-import { DashboardView } from "./views/DashboardView";
-import { IssuesView } from "./views/IssuesView";
-import { DetailsView } from "./views/DetailsView";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Loading } from "./common/Loading";
 import { ToastProvider, triggerToast } from "./common/Toast";
+import {
+  type Bead,
+  type BeadsProject,
+  type BeadsSummary,
+  type ExtensionMessage,
+  vscode,
+  type WebviewSettings,
+} from "./types";
+import { DashboardView } from "./views/DashboardView";
+import { DetailsView } from "./views/DetailsView";
+import { IssuesView } from "./views/IssuesView";
 
 interface AppState {
   viewType: string;
@@ -70,7 +71,10 @@ export function App(): React.ReactElement {
         setState((prev) => ({ ...prev, selectedBead: message.bead }));
         break;
       case "setSelectedBeadId":
-        setState((prev) => ({ ...prev, selectedBeadId: (message as { type: "setSelectedBeadId"; beadId: string | null }).beadId }));
+        setState((prev) => ({
+          ...prev,
+          selectedBeadId: (message as { type: "setSelectedBeadId"; beadId: string | null }).beadId,
+        }));
         break;
       case "setSummary":
         setState((prev) => ({ ...prev, summary: message.summary }));
@@ -125,12 +129,8 @@ export function App(): React.ReactElement {
             onSelectProject={(projectId) =>
               vscode.postMessage({ type: "selectProject", projectId })
             }
-            onSelectBead={(beadId) =>
-              vscode.postMessage({ type: "openBeadDetails", beadId })
-            }
-            onRetry={() =>
-              vscode.postMessage({ type: "refresh" })
-            }
+            onSelectBead={(beadId) => vscode.postMessage({ type: "openBeadDetails", beadId })}
+            onRetry={() => vscode.postMessage({ type: "refresh" })}
           />
         );
 
@@ -147,15 +147,11 @@ export function App(): React.ReactElement {
             onSelectProject={(projectId) =>
               vscode.postMessage({ type: "selectProject", projectId })
             }
-            onSelectBead={(beadId) =>
-              vscode.postMessage({ type: "openBeadDetails", beadId })
-            }
+            onSelectBead={(beadId) => vscode.postMessage({ type: "openBeadDetails", beadId })}
             onUpdateBead={(beadId, updates) =>
               vscode.postMessage({ type: "updateBead", beadId, updates })
             }
-            onRetry={() =>
-              vscode.postMessage({ type: "refresh" })
-            }
+            onRetry={() => vscode.postMessage({ type: "refresh" })}
           />
         );
 
@@ -185,7 +181,13 @@ export function App(): React.ReactElement {
               vscode.postMessage({ type: "updateBead", beadId, updates })
             }
             onAddDependency={(beadId, targetId, dependencyType, reverse) =>
-              vscode.postMessage({ type: "addDependency", beadId, targetId, dependencyType, reverse })
+              vscode.postMessage({
+                type: "addDependency",
+                beadId,
+                targetId,
+                dependencyType,
+                reverse,
+              })
             }
             onRemoveDependency={(beadId, dependsOnId) =>
               vscode.postMessage({ type: "removeDependency", beadId, dependsOnId })
@@ -193,15 +195,9 @@ export function App(): React.ReactElement {
             onAddComment={(beadId, text) =>
               vscode.postMessage({ type: "addComment", beadId, text })
             }
-            onViewInGraph={(beadId) =>
-              vscode.postMessage({ type: "viewInGraph", beadId })
-            }
-            onSelectBead={(beadId) =>
-              vscode.postMessage({ type: "openBeadDetails", beadId })
-            }
-            onCopyId={(beadId) =>
-              vscode.postMessage({ type: "copyBeadId", beadId })
-            }
+            onViewInGraph={(beadId) => vscode.postMessage({ type: "viewInGraph", beadId })}
+            onSelectBead={(beadId) => vscode.postMessage({ type: "openBeadDetails", beadId })}
+            onCopyId={(beadId) => vscode.postMessage({ type: "copyBeadId", beadId })}
           />
         );
       }

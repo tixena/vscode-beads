@@ -5,11 +5,11 @@
  * parses responses, and returns typed results. No daemon, no sockets.
  */
 
-import * as path from "path";
-import * as fs from "fs";
 import { spawn } from "child_process";
+import * as fs from "fs";
+import * as path from "path";
 import * as vscode from "vscode";
-import { BeadsInfo, CliBeadDependency, issueToWebviewBead, Bead } from "./types";
+import { type Bead, type BeadsInfo, type CliBeadDependency, issueToWebviewBead } from "./types";
 
 // Issue type matching CLI JSON output
 export interface CliIssue {
@@ -186,7 +186,9 @@ export class BeadsCliBackend {
         try {
           resolve(JSON.parse(trimmed) as T);
         } catch (err) {
-          reject(new Error(`Failed to parse JSON from bd: ${err}\nOutput: ${trimmed.slice(0, 200)}`));
+          reject(
+            new Error(`Failed to parse JSON from bd: ${err}\nOutput: ${trimmed.slice(0, 200)}`)
+          );
         }
       });
     });
@@ -267,7 +269,7 @@ export class BeadsCliBackend {
   // --- Issues ---
 
   async list(args: ListArgs = {}): Promise<CliIssue[]> {
-    const cmdArgs = ["list", "--json", "--limit", "0"];
+    const cmdArgs = ["list", "--json", "--tree=0", "--limit", "0"];
 
     if (args.status) {
       cmdArgs.push("--status", args.status);
@@ -394,7 +396,12 @@ export class BeadsCliBackend {
 
   async listDepsDown(id: string): Promise<CliBeadDependency[]> {
     try {
-      const result = await this.exec<CliBeadDependency[] | { error: string }>(["dep", "list", id, "--json"]);
+      const result = await this.exec<CliBeadDependency[] | { error: string }>([
+        "dep",
+        "list",
+        id,
+        "--json",
+      ]);
       if (!result || !Array.isArray(result)) return [];
       return result;
     } catch {
@@ -404,7 +411,13 @@ export class BeadsCliBackend {
 
   async listDepsUp(id: string): Promise<CliBeadDependency[]> {
     try {
-      const result = await this.exec<CliBeadDependency[] | { error: string }>(["dep", "list", id, "--json", "--direction=up"]);
+      const result = await this.exec<CliBeadDependency[] | { error: string }>([
+        "dep",
+        "list",
+        id,
+        "--json",
+        "--direction=up",
+      ]);
       if (!result || !Array.isArray(result)) return [];
       return result;
     } catch {
@@ -483,9 +496,10 @@ export class BeadsCliBackend {
     if (!issue) return null;
 
     // Use inline comments from bd show if present, otherwise use separate bd comments result
-    const resolvedComments = (issue.comments && issue.comments.length > 0)
-      ? issue.comments
-      : comments as Array<{ id: number; author: string; text: string; created_at: string }>;
+    const resolvedComments =
+      issue.comments && issue.comments.length > 0
+        ? issue.comments
+        : (comments as Array<{ id: number; author: string; text: string; created_at: string }>);
 
     // Merge deps and comments into the issue for issueToWebviewBead
     const issueWithData = {

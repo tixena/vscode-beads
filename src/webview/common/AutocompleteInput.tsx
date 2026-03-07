@@ -7,7 +7,8 @@
  * - Any searchable dropdown with many options
  */
 
-import React, { useState, useRef, useEffect, useCallback, ReactNode } from "react";
+import type React from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useClickOutside } from "../hooks/useClickOutside";
 
 export interface AutocompleteOption {
@@ -89,11 +90,13 @@ export function AutocompleteInput({
 
   // Reset highlight when filtered options change
   useEffect(() => {
+    console.log(`input value ${inputValue}`);
     setHighlightedIndex(0);
   }, [inputValue]);
 
   // Scroll highlighted item into view
   useEffect(() => {
+    console.log(`Highlighted index: ${highlightedIndex}`);
     if (isOpen && listRef.current) {
       const highlighted = listRef.current.querySelector(".highlighted");
       if (highlighted) {
@@ -115,11 +118,14 @@ export function AutocompleteInput({
     }
   }, [isOpen, useFixedPositioning]);
 
-  const handleSelect = useCallback((value: string) => {
-    onSelect(value);
-    setInputValue("");
-    setIsOpen(false);
-  }, [onSelect]);
+  const handleSelect = useCallback(
+    (value: string) => {
+      onSelect(value);
+      setInputValue("");
+      setIsOpen(false);
+    },
+    [onSelect]
+  );
 
   const handleCreate = useCallback(() => {
     if (onCreate && inputValue.trim()) {
@@ -174,7 +180,8 @@ export function AutocompleteInput({
     }
   };
 
-  const shouldShowDropdown = isOpen && (inputValue.length >= minChars || showAllOnFocus) && totalItems > 0;
+  const shouldShowDropdown =
+    isOpen && (inputValue.length >= minChars || showAllOnFocus) && totalItems > 0;
 
   return (
     <div className={`autocomplete-input ${className}`} ref={wrapperRef}>

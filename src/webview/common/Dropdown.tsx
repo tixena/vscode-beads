@@ -8,9 +8,18 @@
  * - Auto-close on item click (via context)
  */
 
-import React, { useState, useRef, useEffect, ReactNode, createContext, useContext } from "react";
-import { ChevronIcon } from "./ChevronIcon";
+import type React from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useClickOutside } from "../hooks/useClickOutside";
+import { ChevronIcon } from "./ChevronIcon";
 
 // Context to allow DropdownItem to close the dropdown
 const DropdownContext = createContext<{ close: () => void } | null>(null);
@@ -53,12 +62,15 @@ export function Dropdown({
   // Support both controlled and uncontrolled modes
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
-  const setIsOpen = (value: boolean) => {
-    if (!isControlled) {
-      setInternalOpen(value);
-    }
-    onOpenChange?.(value);
-  };
+  const setIsOpen = useCallback(
+    (value: boolean) => {
+      if (!isControlled) {
+        setInternalOpen(value);
+      }
+      onOpenChange?.(value);
+    },
+    [isControlled, onOpenChange]
+  );
 
   const close = () => setIsOpen(false);
 
@@ -70,7 +82,7 @@ export function Dropdown({
     const handleBlur = () => setIsOpen(false);
     window.addEventListener("blur", handleBlur);
     return () => window.removeEventListener("blur", handleBlur);
-  }, []);
+  }, [setIsOpen]);
 
   return (
     <DropdownContext.Provider value={{ close }}>
@@ -84,11 +96,7 @@ export function Dropdown({
           {showChevron && <ChevronIcon open={isOpen} />}
         </button>
 
-        {isOpen && (
-          <div className={`dropdown-menu ${menuClassName}`}>
-            {children}
-          </div>
-        )}
+        {isOpen && <div className={`dropdown-menu ${menuClassName}`}>{children}</div>}
       </div>
     </DropdownContext.Provider>
   );

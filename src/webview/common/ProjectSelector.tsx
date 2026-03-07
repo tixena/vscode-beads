@@ -4,8 +4,8 @@
  * Dropdown for selecting the active Beads project
  */
 
-import React from "react";
-import { BeadsProject } from "../types";
+import type React from "react";
+import type { BeadsProject } from "../types";
 
 interface ProjectSelectorProps {
   projects: BeadsProject[];
@@ -59,9 +59,13 @@ interface ConnectionBadgeProps {
 
 function ConnectionBadge({ status }: ConnectionBadgeProps): React.ReactElement {
   // Map to CSS classes that already exist (connected=running, error=stopped)
-  const cssClass = status === "connected" ? "daemon-running" : status === "error" ? "daemon-stopped" : "daemon-unknown";
-  const statusText =
-    status === "connected" ? "●" : status === "error" ? "○" : "?";
+  const cssClass =
+    status === "connected"
+      ? "daemon-running"
+      : status === "error"
+        ? "daemon-stopped"
+        : "daemon-unknown";
+  const statusText = status === "connected" ? "●" : status === "error" ? "○" : "?";
 
   return (
     <span className={`daemon-badge ${cssClass}`} title={`Status: ${status}`}>

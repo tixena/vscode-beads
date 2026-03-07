@@ -108,7 +108,7 @@ export interface BeadDependency {
 export interface CliBeadDependency {
   id: string;
   dependency_type: string; // relationship: blocks, related, parent-child, etc.
-  issue_type?: string;     // bead type: bug, feature, task, epic, chore
+  issue_type?: string; // bead type: bug, feature, task, epic, chore
   title?: string;
   status?: string;
   priority?: number;
@@ -179,7 +179,13 @@ export type WebviewToExtensionMessage =
   | { type: "updateBead"; beadId: string; updates: Partial<Bead> }
   | { type: "createBead"; data: Partial<Bead> }
   | { type: "deleteBead"; beadId: string }
-  | { type: "addDependency"; beadId: string; targetId: string; dependencyType: DependencyType; reverse: boolean }
+  | {
+      type: "addDependency";
+      beadId: string;
+      targetId: string;
+      dependencyType: DependencyType;
+      reverse: boolean;
+    }
   | { type: "removeDependency"; beadId: string; dependsOnId: string }
   | { type: "addComment"; beadId: string; text: string }
   | { type: "openBeadDetails"; beadId: string }
@@ -254,14 +260,11 @@ export function normalizeStatus(status: string | undefined): BeadStatus | null {
 /**
  * Normalizes a priority value from Beads CLI to internal BeadPriority
  */
-export function normalizePriority(
-  priority: number | string | undefined
-): BeadPriority {
+export function normalizePriority(priority: number | string | undefined): BeadPriority {
   if (priority === undefined || priority === null) {
     return 4; // Default to "None"
   }
-  const num =
-    typeof priority === "string" ? parseInt(priority, 10) : priority;
+  const num = typeof priority === "string" ? parseInt(priority, 10) : priority;
   if (isNaN(num) || num < 0) {
     return 4;
   }
@@ -323,9 +326,7 @@ export function normalizeBead(raw: Record<string, unknown>): Bead | null {
       : Array.isArray(raw.dependsOn)
         ? raw.dependsOn.map((id) => ({ id: String(id) }))
         : undefined,
-    blocks: Array.isArray(raw.blocks)
-      ? raw.blocks.map((id) => ({ id: String(id) }))
-      : undefined,
+    blocks: Array.isArray(raw.blocks) ? raw.blocks.map((id) => ({ id: String(id) })) : undefined,
   };
 }
 
@@ -383,7 +384,7 @@ export function issueToWebviewBead(issue: {
       type: d.issue_type,
       dependencyType: d.dependency_type as DependencyType | undefined,
       title: d.title,
-      status: d.status ? normalizeStatus(d.status) ?? undefined : undefined,
+      status: d.status ? (normalizeStatus(d.status) ?? undefined) : undefined,
       priority: d.priority !== undefined ? normalizePriority(d.priority) : undefined,
     })),
     blocks: issue.dependents?.map((d) => ({
@@ -391,7 +392,7 @@ export function issueToWebviewBead(issue: {
       type: d.issue_type,
       dependencyType: d.dependency_type as DependencyType | undefined,
       title: d.title,
-      status: d.status ? normalizeStatus(d.status) ?? undefined : undefined,
+      status: d.status ? (normalizeStatus(d.status) ?? undefined) : undefined,
       priority: d.priority !== undefined ? normalizePriority(d.priority) : undefined,
     })),
     comments: issue.comments?.map((c) => ({

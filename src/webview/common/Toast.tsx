@@ -4,7 +4,8 @@
  * Transient feedback popup that appears near an action and auto-dismisses.
  */
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import type React from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 export interface ToastMessage {
   id: number;
@@ -26,7 +27,10 @@ let toastId = 0;
 // Global function for triggering toasts from outside React (e.g., extension messages)
 let globalShowToast: ((text: string, position: "top-right" | "top-center") => void) | null = null;
 
-export function triggerToast(text: string, position: "top-right" | "top-center" = "top-right"): void {
+export function triggerToast(
+  text: string,
+  position: "top-right" | "top-center" = "top-right"
+): void {
   if (globalShowToast) {
     globalShowToast(text, position);
   }

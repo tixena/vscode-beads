@@ -4,7 +4,8 @@
  * Displays a label as a pill badge with auto-generated colors based on label name.
  */
 
-import React, { useMemo } from "react";
+import type React from "react";
+import { useMemo } from "react";
 import { getLabelColorStyle } from "../utils/label-colors";
 
 interface LabelBadgeProps {

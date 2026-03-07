@@ -4,17 +4,14 @@
  * Displays error messages with optional retry button
  */
 
-import React from "react";
+import type React from "react";
 
 interface ErrorMessageProps {
   message: string;
   onRetry?: () => void;
 }
 
-export function ErrorMessage({
-  message,
-  onRetry,
-}: ErrorMessageProps): React.ReactElement {
+export function ErrorMessage({ message, onRetry }: ErrorMessageProps): React.ReactElement {
   return (
     <div className="error-message">
       <div className="error-icon">⚠️</div>

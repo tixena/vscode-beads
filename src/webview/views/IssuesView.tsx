@@ -11,52 +11,53 @@
  * - State persistence (sort order, column visibility, column order survive reloads)
  */
 
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
 import {
-  useReactTable,
+  type ColumnFiltersState,
+  type ColumnResizeMode,
+  createColumnHelper,
+  flexRender,
   getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
-  flexRender,
-  createColumnHelper,
-  ColumnFiltersState,
-  ColumnResizeMode,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
 } from "@tanstack/react-table";
-import {
-  Bead,
-  BeadsProject,
-  BeadStatus,
-  BeadPriority,
-  BeadType,
-  STATUS_LABELS,
-  STATUS_COLORS,
-  PRIORITY_COLORS,
-  TYPE_LABELS,
-  TYPE_COLORS,
-  TYPE_SORT_ORDER,
-  getTypeSortOrder,
-  sortLabels,
-  vscode,
-} from "../types";
-import { StatusBadge } from "../common/StatusBadge";
+import { Kanban, Table } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { AutocompleteInput, type AutocompleteOption } from "../common/AutocompleteInput";
+import { Dropdown, DropdownItem } from "../common/Dropdown";
+import { ErrorMessage } from "../common/ErrorMessage";
+import { FilterChip } from "../common/FilterChip";
+import { LabelBadge } from "../common/LabelBadge";
+import { Markdown } from "../common/Markdown";
 import { PriorityBadge } from "../common/PriorityBadge";
+import { ProjectDropdown } from "../common/ProjectDropdown";
+import { StatusBadge } from "../common/StatusBadge";
+import { Timestamp, timestampSortingFn } from "../common/Timestamp";
 import { TypeBadge } from "../common/TypeBadge";
 import { TypeIcon } from "../common/TypeIcon";
-import { LabelBadge } from "../common/LabelBadge";
-import { FilterChip } from "../common/FilterChip";
-import { Table, Kanban } from "lucide-react";
-import { ErrorMessage } from "../common/ErrorMessage";
-import { ProjectDropdown } from "../common/ProjectDropdown";
-import { Dropdown, DropdownItem } from "../common/Dropdown";
-import { Timestamp, timestampSortingFn } from "../common/Timestamp";
-import { AutocompleteInput, AutocompleteOption } from "../common/AutocompleteInput";
-import { Markdown } from "../common/Markdown";
-import { getLabelColorStyle } from "../utils/label-colors";
 import { useClickOutside } from "../hooks/useClickOutside";
 import { useColumnState } from "../hooks/useColumnState";
+import {
+  type Bead,
+  type BeadPriority,
+  type BeadStatus,
+  type BeadsProject,
+  type BeadType,
+  getTypeSortOrder,
+  PRIORITY_COLORS,
+  STATUS_COLORS,
+  STATUS_LABELS,
+  sortLabels,
+  TYPE_COLORS,
+  TYPE_LABELS,
+  TYPE_SORT_ORDER,
+  vscode,
+} from "../types";
+import { getLabelColorStyle } from "../utils/label-colors";
 import { KanbanBoard } from "./KanbanBoard";
 
 interface IssuesViewProps {
@@ -79,7 +80,10 @@ const ISSUE_TYPES = Object.keys(TYPE_SORT_ORDER).sort(
 );
 
 // Custom sorting function for type columns (epic first)
-const typeSortingFn = (rowA: { getValue: (id: string) => unknown }, rowB: { getValue: (id: string) => unknown }) => {
+const typeSortingFn = (
+  rowA: { getValue: (id: string) => unknown },
+  rowB: { getValue: (id: string) => unknown }
+) => {
   const a = getTypeSortOrder(rowA.getValue("type") as string | undefined);
   const b = getTypeSortOrder(rowB.getValue("type") as string | undefined);
   return a - b;
@@ -94,7 +98,11 @@ interface FilterPreset {
 
 const FILTER_PRESETS: FilterPreset[] = [
   { id: "all", label: "All", statuses: [] },
-  { id: "not-closed", label: "Not Closed", statuses: ["open", "in_progress", "blocked", "deferred"] },
+  {
+    id: "not-closed",
+    label: "Not Closed",
+    statuses: ["open", "in_progress", "blocked", "deferred"],
+  },
   { id: "active", label: "Active", statuses: ["in_progress", "blocked"] },
   { id: "blocked", label: "Blocked", statuses: ["blocked"] },
   { id: "deferred", label: "Deferred", statuses: ["deferred"] },
@@ -116,7 +124,6 @@ export function IssuesView({
   onUpdateBead,
   onRetry,
 }: IssuesViewProps): React.ReactElement {
-
   // Persisted column state (sorting, visibility, order)
   const defaultVisibility = {
     labels: false,
@@ -157,7 +164,9 @@ export function IssuesView({
 
   // Tooltip state
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(
+    null
+  );
   const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Get hovered bead content for tooltip
@@ -166,45 +175,48 @@ export function IssuesView({
     return beads.find((b) => b.id === hoveredRowId);
   }, [hoveredRowId, beads]);
 
-  const handleRowMouseEnter = useCallback((e: React.MouseEvent<HTMLTableRowElement>, beadId: string) => {
-    // Skip if tooltips are disabled
-    if (tooltipHoverDelay === 0) return;
+  const handleRowMouseEnter = useCallback(
+    (e: React.MouseEvent<HTMLTableRowElement>, beadId: string) => {
+      // Skip if tooltips are disabled
+      if (tooltipHoverDelay === 0) return;
 
-    if (tooltipTimeoutRef.current) {
-      clearTimeout(tooltipTimeoutRef.current);
-    }
-    const rect = e.currentTarget.getBoundingClientRect();
-    const tooltipWidth = 300;
-    const tooltipMaxHeight = 200;
-    const padding = 8;
-
-    // Position below the row, left-aligned with some offset
-    let left = rect.left + 20;
-    let top = rect.bottom + padding;
-
-    // Keep tooltip within viewport horizontally
-    if (left + tooltipWidth > window.innerWidth - padding) {
-      left = window.innerWidth - tooltipWidth - padding;
-    }
-
-    // Check if tooltip would overflow below viewport
-    const spaceBelow = window.innerHeight - rect.bottom - padding;
-    const spaceAbove = rect.top - padding;
-
-    if (spaceBelow < tooltipMaxHeight && spaceAbove > spaceBelow) {
-      // Position above the row when there's more space above
-      top = rect.top - tooltipMaxHeight - padding;
-      // Clamp to viewport top
-      if (top < padding) {
-        top = padding;
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current);
       }
-    }
+      const rect = e.currentTarget.getBoundingClientRect();
+      const tooltipWidth = 300;
+      const tooltipMaxHeight = 200;
+      const padding = 8;
 
-    tooltipTimeoutRef.current = setTimeout(() => {
-      setHoveredRowId(beadId);
-      setTooltipPosition({ top, left });
-    }, tooltipHoverDelay);
-  }, [tooltipHoverDelay]);
+      // Position below the row, left-aligned with some offset
+      let left = rect.left + 20;
+      let top = rect.bottom + padding;
+
+      // Keep tooltip within viewport horizontally
+      if (left + tooltipWidth > window.innerWidth - padding) {
+        left = window.innerWidth - tooltipWidth - padding;
+      }
+
+      // Check if tooltip would overflow below viewport
+      const spaceBelow = window.innerHeight - rect.bottom - padding;
+      const spaceAbove = rect.top - padding;
+
+      if (spaceBelow < tooltipMaxHeight && spaceAbove > spaceBelow) {
+        // Position above the row when there's more space above
+        top = rect.top - tooltipMaxHeight - padding;
+        // Clamp to viewport top
+        if (top < padding) {
+          top = padding;
+        }
+      }
+
+      tooltipTimeoutRef.current = setTimeout(() => {
+        setHoveredRowId(beadId);
+        setTooltipPosition({ top, left });
+      }, tooltipHoverDelay);
+    },
+    [tooltipHoverDelay]
+  );
 
   const handleRowMouseLeave = useCallback(() => {
     if (tooltipTimeoutRef.current) {
@@ -228,6 +240,12 @@ export function IssuesView({
   useClickOutside(filterMenuRef, () => setFilterMenuOpen(null), !!filterMenuOpen);
   useClickOutside(columnMenuRef, () => setColumnMenuOpen(false), columnMenuOpen);
 
+  const handleCopyId = useCallback((beadId: string) => {
+    vscode.postMessage({ type: "copyBeadId", beadId });
+    setCopiedId(beadId);
+    setTimeout(() => setCopiedId(null), 1500);
+  }, []);
+
   // Column definitions
   const columns = useMemo(
     () => [
@@ -239,9 +257,7 @@ export function IssuesView({
         maxSize: 28,
         enableResizing: false,
         cell: (info) =>
-          info.getValue() ? (
-            <TypeIcon type={info.getValue() as BeadType} size={16} />
-          ) : null,
+          info.getValue() ? <TypeIcon type={info.getValue() as BeadType} size={16} /> : null,
         sortingFn: typeSortingFn,
       }),
       columnHelper.accessor("type", {
@@ -249,9 +265,7 @@ export function IssuesView({
         size: 70,
         minSize: 30,
         cell: (info) =>
-          info.getValue() ? (
-            <TypeBadge type={info.getValue() as BeadType} size="small" />
-          ) : null,
+          info.getValue() ? <TypeBadge type={info.getValue() as BeadType} size="small" /> : null,
         sortingFn: typeSortingFn,
         filterFn: (row, columnId, filterValue: string[]) => {
           if (!filterValue || filterValue.length === 0) return true;
@@ -296,7 +310,7 @@ export function IssuesView({
         minSize: 30,
         cell: (info) =>
           info.getValue() !== undefined ? (
-            <PriorityBadge priority={info.getValue()!} size="small" />
+            <PriorityBadge priority={info.getValue() || 4} size="small" />
           ) : null,
         filterFn: (row, columnId, filterValue: BeadPriority[]) => {
           if (!filterValue || filterValue.length === 0) return true;
@@ -364,7 +378,7 @@ export function IssuesView({
         sortingFn: timestampSortingFn,
       }),
     ],
-    [copiedId]
+    [copiedId, onSelectBead, handleCopyId]
   );
 
   const table = useReactTable({
@@ -401,19 +415,19 @@ export function IssuesView({
     enableColumnResizing: true,
   });
 
-  const handleCopyId = useCallback((beadId: string) => {
-    vscode.postMessage({ type: "copyBeadId", beadId });
-    setCopiedId(beadId);
-    setTimeout(() => setCopiedId(null), 1500);
-  }, []);
-
   // Filter helpers
   const statusFilter = (columnFilters.find((f) => f.id === "status")?.value || []) as BeadStatus[];
-  const priorityFilter = (columnFilters.find((f) => f.id === "priority")?.value || []) as BeadPriority[];
+  const priorityFilter = (columnFilters.find((f) => f.id === "priority")?.value ||
+    []) as BeadPriority[];
   const typeFilter = (columnFilters.find((f) => f.id === "type")?.value || []) as string[];
   const assigneeFilter = (columnFilters.find((f) => f.id === "assignee")?.value || []) as string[];
   const labelFilter = (columnFilters.find((f) => f.id === "labels")?.value || []) as string[];
-  const hasActiveFilters = statusFilter.length > 0 || priorityFilter.length > 0 || typeFilter.length > 0 || assigneeFilter.length > 0 || labelFilter.length > 0;
+  const hasActiveFilters =
+    statusFilter.length > 0 ||
+    priorityFilter.length > 0 ||
+    typeFilter.length > 0 ||
+    assigneeFilter.length > 0 ||
+    labelFilter.length > 0;
 
   const applyPreset = (presetId: string) => {
     const preset = FILTER_PRESETS.find((p) => p.id === presetId);
@@ -442,9 +456,7 @@ export function IssuesView({
     const newStatuses = statusFilter.filter((s) => s !== status);
     setColumnFilters((prev) => {
       const others = prev.filter((f) => f.id !== "status");
-      return newStatuses.length > 0
-        ? [...others, { id: "status", value: newStatuses }]
-        : others;
+      return newStatuses.length > 0 ? [...others, { id: "status", value: newStatuses }] : others;
     });
     setActivePreset("");
   };
@@ -486,9 +498,7 @@ export function IssuesView({
     const newTypes = typeFilter.filter((t) => t !== type);
     setColumnFilters((prev) => {
       const others = prev.filter((f) => f.id !== "type");
-      return newTypes.length > 0
-        ? [...others, { id: "type", value: newTypes }]
-        : others;
+      return newTypes.length > 0 ? [...others, { id: "type", value: newTypes }] : others;
     });
     setActivePreset("");
   };
@@ -530,9 +540,7 @@ export function IssuesView({
     const newLabels = labelFilter.filter((l) => l !== label);
     setColumnFilters((prev) => {
       const others = prev.filter((f) => f.id !== "labels");
-      return newLabels.length > 0
-        ? [...others, { id: "labels", value: newLabels }]
-        : others;
+      return newLabels.length > 0 ? [...others, { id: "labels", value: newLabels }] : others;
     });
     setActivePreset("");
   };
@@ -543,7 +551,9 @@ export function IssuesView({
     setActivePreset("all");
   };
 
-  const filteredCount = table.getFilteredRowModel().rows.length;
+  const tableRows = useMemo(() => table.getRowModel().rows, [table]);
+
+  const filteredCount = tableRows.length;
   const totalCount = beads.length;
 
   // Get faceted counts for filters (counts based on OTHER active filters, not this column)
@@ -554,7 +564,13 @@ export function IssuesView({
 
   // Unfiltered counts per status (for kanban empty state messaging)
   const unfilteredStatusCounts = useMemo(() => {
-    const counts: Record<BeadStatus, number> = { open: 0, in_progress: 0, blocked: 0, deferred: 0, closed: 0 };
+    const counts: Record<BeadStatus, number> = {
+      open: 0,
+      in_progress: 0,
+      blocked: 0,
+      deferred: 0,
+      closed: 0,
+    };
     for (const bead of beads) {
       if (bead.status in counts) {
         counts[bead.status as BeadStatus]++;
@@ -565,7 +581,9 @@ export function IssuesView({
 
   // Get unique assignees from facets for filter menu
   const uniqueAssignees = useMemo(() => {
-    const assignees = Array.from(assigneeFacets.keys()).filter((a): a is string => typeof a === "string" && a !== "");
+    const assignees = Array.from(assigneeFacets.keys()).filter(
+      (a): a is string => typeof a === "string" && a !== ""
+    );
     return assignees.sort();
   }, [assigneeFacets]);
 
@@ -585,7 +603,7 @@ export function IssuesView({
   const { uniqueLabels, labelCounts, unlabeledCount } = useMemo(() => {
     const counts = new Map<string, number>();
     let unlabeled = 0;
-    const filteredRows = table.getFilteredRowModel().rows;
+    const filteredRows = tableRows;
     for (const row of filteredRows) {
       const labels = row.original.labels;
       if (!labels || labels.length === 0) {
@@ -598,7 +616,7 @@ export function IssuesView({
     }
     const sorted = Array.from(counts.keys()).sort();
     return { uniqueLabels: sorted, labelCounts: counts, unlabeledCount: unlabeled };
-  }, [table.getFilteredRowModel().rows]);
+  }, [tableRows]);
 
   // Build label autocomplete options
   const labelOptions = useMemo((): AutocompleteOption[] => {
@@ -742,7 +760,9 @@ export function IssuesView({
             <FilterChip
               key={`label-${label}`}
               label={label === "__unlabeled__" ? "Unlabeled" : label}
-              accentColor={label === "__unlabeled__" ? "#6b7280" : getLabelColorStyle(label).backgroundColor}
+              accentColor={
+                label === "__unlabeled__" ? "#6b7280" : getLabelColorStyle(label).backgroundColor
+              }
               onRemove={() => removeLabelFilter(label)}
             />
           ))}
@@ -758,11 +778,21 @@ export function IssuesView({
 
             {filterMenuOpen === "main" && (
               <div className="filter-menu">
-                <button onClick={() => setFilterMenuOpen("status")}>Status <span className="menu-chevron">›</span></button>
-                <button onClick={() => setFilterMenuOpen("priority")}>Priority <span className="menu-chevron">›</span></button>
-                <button onClick={() => setFilterMenuOpen("type")}>Type <span className="menu-chevron">›</span></button>
-                <button onClick={() => setFilterMenuOpen("assignee")}>Assignee <span className="menu-chevron">›</span></button>
-                <button onClick={() => setFilterMenuOpen("label")}>Label <span className="menu-chevron">›</span></button>
+                <button onClick={() => setFilterMenuOpen("status")}>
+                  Status <span className="menu-chevron">›</span>
+                </button>
+                <button onClick={() => setFilterMenuOpen("priority")}>
+                  Priority <span className="menu-chevron">›</span>
+                </button>
+                <button onClick={() => setFilterMenuOpen("type")}>
+                  Type <span className="menu-chevron">›</span>
+                </button>
+                <button onClick={() => setFilterMenuOpen("assignee")}>
+                  Assignee <span className="menu-chevron">›</span>
+                </button>
+                <button onClick={() => setFilterMenuOpen("label")}>
+                  Label <span className="menu-chevron">›</span>
+                </button>
               </div>
             )}
 
@@ -779,7 +809,9 @@ export function IssuesView({
                       </button>
                     );
                   })}
-                <button className="back-btn" onClick={() => setFilterMenuOpen("main")}>← Back</button>
+                <button className="back-btn" onClick={() => setFilterMenuOpen("main")}>
+                  ← Back
+                </button>
               </div>
             )}
 
@@ -796,24 +828,26 @@ export function IssuesView({
                       </button>
                     );
                   })}
-                <button className="back-btn" onClick={() => setFilterMenuOpen("main")}>← Back</button>
+                <button className="back-btn" onClick={() => setFilterMenuOpen("main")}>
+                  ← Back
+                </button>
               </div>
             )}
 
             {filterMenuOpen === "type" && (
               <div className="filter-menu">
-                {ISSUE_TYPES
-                  .filter((t) => !typeFilter.includes(t))
-                  .map((type) => {
-                    const count = typeFacets.get(type) ?? 0;
-                    return (
-                      <button key={type} onClick={() => addTypeFilter(type)}>
-                        <TypeBadge type={type as BeadType} size="small" />
-                        <span className="facet-count">({count})</span>
-                      </button>
-                    );
-                  })}
-                <button className="back-btn" onClick={() => setFilterMenuOpen("main")}>← Back</button>
+                {ISSUE_TYPES.filter((t) => !typeFilter.includes(t)).map((type) => {
+                  const count = typeFacets.get(type) ?? 0;
+                  return (
+                    <button key={type} onClick={() => addTypeFilter(type)}>
+                      <TypeBadge type={type as BeadType} size="small" />
+                      <span className="facet-count">({count})</span>
+                    </button>
+                  );
+                })}
+                <button className="back-btn" onClick={() => setFilterMenuOpen("main")}>
+                  ← Back
+                </button>
               </div>
             )}
 
@@ -839,7 +873,9 @@ export function IssuesView({
                 {uniqueAssignees.length === 0 && unassignedCount === 0 && (
                   <span className="filter-menu-empty">No assignees</span>
                 )}
-                <button className="back-btn" onClick={() => setFilterMenuOpen("main")}>← Back</button>
+                <button className="back-btn" onClick={() => setFilterMenuOpen("main")}>
+                  ← Back
+                </button>
               </div>
             )}
 
@@ -855,7 +891,9 @@ export function IssuesView({
                   autoFocus
                   showAllOnFocus
                 />
-                <button className="back-btn" onClick={() => setFilterMenuOpen("main")}>← Back</button>
+                <button className="back-btn" onClick={() => setFilterMenuOpen("main")}>
+                  ← Back
+                </button>
               </div>
             )}
           </div>
@@ -869,17 +907,14 @@ export function IssuesView({
       )}
 
       {/* Error state */}
-      {error && !loading && (
-        <ErrorMessage
-          message={error}
-          onRetry={onRetry}
-        />
-      )}
+      {error && !loading && <ErrorMessage message={error} onRetry={onRetry} />}
 
       {/* Table */}
       {!error && viewMode === "table" && (
         <div className="beads-table-wrapper">
-          <div className={`beads-table-container ${table.getState().columnSizingInfo.isResizingColumn ? "resizing" : ""}`}>
+          <div
+            className={`beads-table-container ${table.getState().columnSizingInfo.isResizingColumn ? "resizing" : ""}`}
+          >
             <table
               className="beads-table"
               style={{ minWidth: table.getCenterTotalSize() }}
@@ -1008,10 +1043,7 @@ export function IssuesView({
               <tbody>
                 {table.getRowModel().rows.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={table.getVisibleLeafColumns().length + 1}
-                      className="empty-row"
-                    >
+                    <td colSpan={table.getVisibleLeafColumns().length + 1} className="empty-row">
                       {loading ? "Loading..." : "No issues matching filter"}
                     </td>
                   </tr>
@@ -1052,7 +1084,7 @@ export function IssuesView({
       {/* Kanban Board */}
       {!error && viewMode === "board" && (
         <KanbanBoard
-          beads={table.getFilteredRowModel().rows.map((r) => r.original)}
+          beads={tableRows.map((r) => r.original)}
           selectedBeadId={selectedBeadId}
           onSelectBead={onSelectBead}
           onUpdateBead={onUpdateBead}
@@ -1062,7 +1094,9 @@ export function IssuesView({
       )}
 
       {/* Markdown tooltip */}
-      {hoveredBead && tooltipPosition && (hoveredBead.description || hoveredBead.title) &&
+      {hoveredBead &&
+        tooltipPosition &&
+        (hoveredBead.description || hoveredBead.title) &&
         createPortal(
           <div
             className="markdown-tooltip"

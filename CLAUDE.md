@@ -9,7 +9,7 @@ bun install              # Install dependencies
 bun run compile          # Build extension + webview
 bun run compile:quiet    # Build (quiet output - use this to save context)
 bun run watch            # Watch mode (extension + webview in parallel)
-bun run lint             # ESLint on src/**/*.{ts,tsx}
+bun run lint             # Biome check with auto-fix
 bun run test             # Jest tests (experimental VM modules)
 bun run package          # Create VSIX package
 ```

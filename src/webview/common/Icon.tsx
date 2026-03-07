@@ -4,8 +4,8 @@
  * Renders SVG icons from the icons folder (FontAwesome Free)
  */
 
-import React from "react";
-import { icons, IconName } from "../icons";
+import type React from "react";
+import { type IconName, icons } from "../icons";
 
 interface IconProps {
   name: IconName;
@@ -27,14 +27,13 @@ export function Icon({
 
   // Inject size, color, and class into SVG
   const styledSvg = svgContent
-    .replace(/<svg/, `<svg width="${size}" height="${size}" fill="${color}" class="icon ${className}"`)
+    .replace(
+      /<svg/,
+      `<svg width="${size}" height="${size}" fill="${color}" class="icon ${className}"`
+    )
     .replace(/<!--[\s\S]*?-->/g, ""); // Remove comments
 
   return (
-    <span
-      className="icon-wrapper"
-      title={title}
-      dangerouslySetInnerHTML={{ __html: styledSvg }}
-    />
+    <span className="icon-wrapper" title={title} dangerouslySetInnerHTML={{ __html: styledSvg }} />
   );
 }

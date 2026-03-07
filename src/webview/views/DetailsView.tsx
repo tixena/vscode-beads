@@ -7,25 +7,24 @@
  * - Metadata display
  */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { StatusPriorityPill } from "../common/StatusPriorityPill";
+import { Timestamp } from "../common/Timestamp";
 import {
-  Bead,
-  BeadStatus,
-  BeadPriority,
-  BeadDependency,
-  DependencyType,
-  BeadType,
-  STATUS_LABELS,
+  type Bead,
+  type BeadDependency,
+  type BeadPriority,
+  type BeadStatus,
+  type BeadType,
+  type DependencyType,
+  getTypeSortOrder,
   PRIORITY_COLORS,
   STATUS_COLORS,
+  STATUS_LABELS,
+  sortLabels,
   TYPE_COLORS,
   TYPE_LABELS,
-  TYPE_SORT_ORDER,
-  getTypeSortOrder,
-  sortLabels,
 } from "../types";
-import { Timestamp } from "../common/Timestamp";
-import { StatusPriorityPill } from "../common/StatusPriorityPill";
 
 /**
  * Detects if a string looks like a URL
@@ -64,7 +63,11 @@ function ExternalRefValue({ value }: { value?: string }) {
 type DependencyDirection = "forward" | "reverse";
 
 // Options for adding dependencies (type + direction)
-const DEPENDENCY_TYPE_OPTIONS: { value: DependencyType; direction: DependencyDirection; label: string }[] = [
+const DEPENDENCY_TYPE_OPTIONS: {
+  value: DependencyType;
+  direction: DependencyDirection;
+  label: string;
+}[] = [
   { value: "blocks", direction: "forward", label: "Blocked By" },
   { value: "blocks", direction: "reverse", label: "Blocks" },
   { value: "parent-child", direction: "forward", label: "Parent" },
@@ -82,40 +85,42 @@ const DEPENDENCY_TYPE_OPTIONS: { value: DependencyType; direction: DependencyDir
 // Labels for dependency sections based on array (direction) and type
 const DEPENDENCY_LABELS: Record<"dependsOn" | "blocks", Partial<Record<DependencyType, string>>> = {
   dependsOn: {
-    "blocks": "Blocked By",
+    blocks: "Blocked By",
     "parent-child": "Parent",
     "discovered-from": "Discovered From",
-    "related": "Related To",
+    related: "Related To",
     "relates-to": "Relates To",
-    "tracks": "Tracks",
-    "until": "Until",
+    tracks: "Tracks",
+    until: "Until",
     "caused-by": "Caused By",
-    "validates": "Validates",
-    "supersedes": "Supersedes",
+    validates: "Validates",
+    supersedes: "Supersedes",
   },
   blocks: {
-    "blocks": "Blocks",
+    blocks: "Blocks",
     "parent-child": "Children",
     "discovered-from": "Spawned",
-    "related": "Related From",
+    related: "Related From",
     "relates-to": "Related From",
-    "tracks": "Tracked By",
-    "until": "Unblocked By",
+    tracks: "Tracked By",
+    until: "Unblocked By",
     "caused-by": "Causes",
-    "validates": "Validated By",
-    "supersedes": "Superseded By",
+    validates: "Validated By",
+    supersedes: "Superseded By",
   },
 };
 
 // Group dependencies by their relationship type
-function groupDependenciesByType(deps: BeadDependency[]): Partial<Record<DependencyType, BeadDependency[]>> {
+function groupDependenciesByType(
+  deps: BeadDependency[]
+): Partial<Record<DependencyType, BeadDependency[]>> {
   const groups: Partial<Record<DependencyType, BeadDependency[]>> = {};
   for (const dep of deps) {
     const depType = dep.dependencyType || "blocks"; // fallback to blocks if unknown
     if (!groups[depType]) {
       groups[depType] = [];
     }
-    groups[depType]!.push(dep);
+    groups[depType].push(dep);
   }
   return groups;
 }
@@ -126,6 +131,7 @@ const STATUS_SORT_ORDER: Record<BeadStatus, number> = {
   in_progress: 1,
   open: 2,
   closed: 3,
+  deferred: 4,
 };
 
 function sortDependencies(deps: BeadDependency[]): BeadDependency[] {
@@ -142,16 +148,17 @@ function sortDependencies(deps: BeadDependency[]): BeadDependency[] {
     return aPriority - bPriority;
   });
 }
+
+import { ColoredSelect, type ColoredSelectOption } from "../common/ColoredSelect";
+import { Dropdown, DropdownItem } from "../common/Dropdown";
+import { Icon } from "../common/Icon";
 import { LabelBadge } from "../common/LabelBadge";
-import { StatusBadge } from "../common/StatusBadge";
+import { Markdown } from "../common/Markdown";
 import { PriorityBadge } from "../common/PriorityBadge";
+import { StatusBadge } from "../common/StatusBadge";
+import { useToast } from "../common/Toast";
 import { TypeBadge } from "../common/TypeBadge";
 import { TypeIcon } from "../common/TypeIcon";
-import { Icon } from "../common/Icon";
-import { Markdown } from "../common/Markdown";
-import { useToast } from "../common/Toast";
-import { ColoredSelect, ColoredSelectOption } from "../common/ColoredSelect";
-import { Dropdown, DropdownItem } from "../common/Dropdown";
 
 // Build options for ColoredSelect dropdowns (sorted by TYPE_SORT_ORDER)
 const TYPE_OPTIONS: ColoredSelectOption<BeadType>[] = (Object.keys(TYPE_LABELS) as BeadType[])
@@ -162,13 +169,17 @@ const TYPE_OPTIONS: ColoredSelectOption<BeadType>[] = (Object.keys(TYPE_LABELS) 
     color: TYPE_COLORS[t],
   }));
 
-const STATUS_OPTIONS: ColoredSelectOption<BeadStatus>[] = (Object.keys(STATUS_LABELS) as BeadStatus[]).map((s) => ({
+const STATUS_OPTIONS: ColoredSelectOption<BeadStatus>[] = (
+  Object.keys(STATUS_LABELS) as BeadStatus[]
+).map((s) => ({
   value: s,
   label: STATUS_LABELS[s],
   color: STATUS_COLORS[s],
 }));
 
-const PRIORITY_OPTIONS: ColoredSelectOption<BeadPriority>[] = ([0, 1, 2, 3, 4] as BeadPriority[]).map((p) => ({
+const PRIORITY_OPTIONS: ColoredSelectOption<BeadPriority>[] = (
+  [0, 1, 2, 3, 4] as BeadPriority[]
+).map((p) => ({
   value: p,
   label: `P${p}`,
   color: PRIORITY_COLORS[p],
@@ -182,7 +193,12 @@ interface DetailsViewProps {
   userId?: string;
   knownAssignees?: string[];
   onUpdateBead: (beadId: string, updates: Partial<Bead>) => void;
-  onAddDependency: (beadId: string, targetId: string, dependencyType: DependencyType, reverse: boolean) => void;
+  onAddDependency: (
+    beadId: string,
+    targetId: string,
+    dependencyType: DependencyType,
+    reverse: boolean
+  ) => void;
   onRemoveDependency: (beadId: string, dependsOnId: string) => void;
   onAddComment?: (beadId: string, text: string) => void;
   onViewInGraph: (beadId: string) => void;
@@ -225,6 +241,7 @@ export function DetailsView({
 
   // Reset edit state when bead ID changes
   useEffect(() => {
+    console.log(`Changed to bead ${bead?.id}`);
     setEditMode(false);
     setEditedBead({});
   }, [bead?.id]);
@@ -234,7 +251,7 @@ export function DetailsView({
     if (!editMode && Object.keys(editedBead).length > 0) {
       setEditedBead({});
     }
-  }, [bead?.updatedAt]);
+  }, [editMode, editedBead]);
 
   const handleSave = useCallback(() => {
     if (bead && Object.keys(editedBead).length > 0) {
@@ -262,12 +279,9 @@ export function DetailsView({
     setEditedBead({});
   }, []);
 
-  const handleFieldChange = useCallback(
-    (field: keyof Bead, value: unknown) => {
-      setEditedBead((prev) => ({ ...prev, [field]: value }));
-    },
-    []
-  );
+  const handleFieldChange = useCallback((field: keyof Bead, value: unknown) => {
+    setEditedBead((prev) => ({ ...prev, [field]: value }));
+  }, []);
 
   const handleAddLabel = useCallback(() => {
     if (newLabel.trim() && bead) {
@@ -434,11 +448,7 @@ export function DetailsView({
               />
             </div>
             {sortLabels(displayBead.labels).map((label) => (
-              <LabelBadge
-                key={label}
-                label={label}
-                onRemove={() => handleRemoveLabel(label)}
-              />
+              <LabelBadge key={label} label={label} onRemove={() => handleRemoveLabel(label)} />
             ))}
           </>
         ) : (
@@ -447,7 +457,9 @@ export function DetailsView({
               value={(displayBead.type || "task") as BeadType}
               options={TYPE_OPTIONS}
               onChange={(v) => handleInlineUpdate("type", v)}
-              renderTrigger={() => <TypeBadge type={(displayBead.type || "task") as BeadType} size="small" />}
+              renderTrigger={() => (
+                <TypeBadge type={(displayBead.type || "task") as BeadType} size="small" />
+              )}
               renderOption={(opt) => <TypeBadge type={opt.value as BeadType} size="small" />}
               showChevron={false}
             />
@@ -463,8 +475,12 @@ export function DetailsView({
               value={displayBead.priority ?? 4}
               options={PRIORITY_OPTIONS}
               onChange={(v) => handleInlineUpdate("priority", v)}
-              renderTrigger={() => <PriorityBadge priority={displayBead.priority ?? 4} size="small" />}
-              renderOption={(opt) => <PriorityBadge priority={opt.value as BeadPriority} size="small" />}
+              renderTrigger={() => (
+                <PriorityBadge priority={displayBead.priority ?? 4} size="small" />
+              )}
+              renderOption={(opt) => (
+                <PriorityBadge priority={opt.value as BeadPriority} size="small" />
+              )}
               showChevron={false}
             />
             <Dropdown
@@ -559,14 +575,20 @@ export function DetailsView({
             <input
               type="number"
               value={displayBead.estimatedMinutes || ""}
-              onChange={(e) => handleFieldChange("estimatedMinutes", e.target.value ? parseInt(e.target.value, 10) : null)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "estimatedMinutes",
+                  e.target.value ? parseInt(e.target.value, 10) : null
+                )
+              }
               className="text-input estimate-input"
               placeholder="Minutes"
               min="0"
             />
           ) : (
             <span className="estimate-value">
-              {Math.floor(displayBead.estimatedMinutes! / 60)}h {displayBead.estimatedMinutes! % 60}m
+              {Math.floor((displayBead.estimatedMinutes || 0) / 60)}h{" "}
+              {(displayBead.estimatedMinutes || 0) % 60}m
             </span>
           )}
         </div>
@@ -585,7 +607,7 @@ export function DetailsView({
               placeholder="Design considerations, architecture notes..."
             />
           ) : (
-            <TextContent content={displayBead.design!} renderMarkdown={renderMarkdown} />
+            <TextContent content={displayBead.design || ""} renderMarkdown={renderMarkdown} />
           )}
         </div>
       )}
@@ -603,7 +625,10 @@ export function DetailsView({
               placeholder="Definition of done..."
             />
           ) : (
-            <TextContent content={displayBead.acceptanceCriteria!} renderMarkdown={renderMarkdown} />
+            <TextContent
+              content={displayBead.acceptanceCriteria || ""}
+              renderMarkdown={renderMarkdown}
+            />
           )}
         </div>
       )}
@@ -621,7 +646,7 @@ export function DetailsView({
               placeholder="Progress notes, findings..."
             />
           ) : (
-            <TextContent content={displayBead.notes!} renderMarkdown={renderMarkdown} />
+            <TextContent content={displayBead.notes || ""} renderMarkdown={renderMarkdown} />
           )}
         </div>
       )}
@@ -634,10 +659,25 @@ export function DetailsView({
         const hasBlocks = (displayBead.blocks?.length || 0) > 0;
 
         // Define rendering order: hierarchy first, then workflow, then provenance, then related
-        const typeOrder: DependencyType[] = ["parent-child", "blocks", "discovered-from", "related", "relates-to", "tracks", "until", "caused-by", "validates", "supersedes"];
+        const typeOrder: DependencyType[] = [
+          "parent-child",
+          "blocks",
+          "discovered-from",
+          "related",
+          "relates-to",
+          "tracks",
+          "until",
+          "caused-by",
+          "validates",
+          "supersedes",
+        ];
 
         // Helper to render a dependency item
-        const renderDepItem = (dep: BeadDependency, direction: "dependsOn" | "blocks", allowRemove: boolean) => (
+        const renderDepItem = (
+          dep: BeadDependency,
+          direction: "dependsOn" | "blocks",
+          allowRemove: boolean
+        ) => (
           <div
             key={dep.id}
             className={`dep-item dep-type-${dep.type || "task"} ${onSelectBead && !editMode ? "clickable" : ""}`}
@@ -677,7 +717,9 @@ export function DetailsView({
                     <div className="details-section">
                       <h4>{DEPENDENCY_LABELS.dependsOn[depType] || depType}</h4>
                       <div className="deps-list">
-                        {sortDependencies(dependsOnDeps).map((dep) => renderDepItem(dep, "dependsOn", true))}
+                        {sortDependencies(dependsOnDeps).map((dep) =>
+                          renderDepItem(dep, "dependsOn", true)
+                        )}
                       </div>
                     </div>
                   )}
@@ -685,7 +727,9 @@ export function DetailsView({
                     <div className="details-section">
                       <h4>{DEPENDENCY_LABELS.blocks[depType] || depType}</h4>
                       <div className="deps-list">
-                        {sortDependencies(blocksDeps).map((dep) => renderDepItem(dep, "blocks", false))}
+                        {sortDependencies(blocksDeps).map((dep) =>
+                          renderDepItem(dep, "blocks", false)
+                        )}
                       </div>
                     </div>
                   )}
@@ -748,9 +792,7 @@ export function DetailsView({
               </div>
             </div>
           ))}
-          {(displayBead.comments || []).length === 0 && (
-            <span className="muted">No comments</span>
-          )}
+          {(displayBead.comments || []).length === 0 && <span className="muted">No comments</span>}
         </div>
         {/* Comment input - always shown if callback provided */}
         {onAddComment && (
@@ -779,10 +821,18 @@ export function DetailsView({
 
       {/* Metadata footer */}
       <div className="details-meta">
-        <span title={displayBead.createdAt ? new Date(displayBead.createdAt).toLocaleString() : undefined}>
+        <span
+          title={
+            displayBead.createdAt ? new Date(displayBead.createdAt).toLocaleString() : undefined
+          }
+        >
           Created <Timestamp value={displayBead.createdAt} format="relative" />
         </span>
-        <span title={displayBead.updatedAt ? new Date(displayBead.updatedAt).toLocaleString() : undefined}>
+        <span
+          title={
+            displayBead.updatedAt ? new Date(displayBead.updatedAt).toLocaleString() : undefined
+          }
+        >
           Updated <Timestamp value={displayBead.updatedAt} format="relative" />
         </span>
         {displayBead.closedAt && (

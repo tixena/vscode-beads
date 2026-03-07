@@ -36,7 +36,7 @@
 }
 
 body {
-  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   font-size: var(--vscode-font-size, 13px);
   color: var(--vscode-foreground);
   background-color: var(--vscode-editor-background);
@@ -587,7 +587,9 @@ textarea {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -861,7 +863,6 @@ textarea {
   min-width: 100px;
 }
 
-
 .filter-chip {
   display: inline-flex;
   align-items: center;
@@ -934,7 +935,7 @@ textarea {
   background: var(--vscode-dropdown-background);
   border: 1px solid var(--vscode-dropdown-border);
   border-radius: var(--border-radius);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .filter-menu button {
@@ -1204,7 +1205,7 @@ textarea {
   background: var(--vscode-dropdown-background);
   border: 1px solid var(--vscode-dropdown-border);
   border-radius: var(--border-radius);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .col-menu label {
@@ -1408,9 +1409,15 @@ textarea {
   border-bottom: 1px solid var(--vscode-panel-border);
 }
 
-.work-section.ready h3 { color: #10b981; }
-.work-section.in-progress h3 { color: #3b82f6; }
-.work-section.blocked h3 { color: #ef4444; }
+.work-section.ready h3 {
+  color: #10b981;
+}
+.work-section.in-progress h3 {
+  color: #3b82f6;
+}
+.work-section.blocked h3 {
+  color: #ef4444;
+}
 
 .bead-list {
   list-style: none;
@@ -1659,7 +1666,7 @@ textarea {
   background: var(--vscode-dropdown-background);
   border: 1px solid var(--vscode-dropdown-border);
   border-radius: var(--border-radius);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .colored-select-option {
@@ -1820,10 +1827,18 @@ textarea {
   line-height: 1.2;
 }
 
-.markdown-content h1 { font-size: 1.2em; }
-.markdown-content h2 { font-size: 1.1em; }
-.markdown-content h3 { font-size: 1.05em; }
-.markdown-content h4 { font-size: 1em; }
+.markdown-content h1 {
+  font-size: 1.2em;
+}
+.markdown-content h2 {
+  font-size: 1.1em;
+}
+.markdown-content h3 {
+  font-size: 1.05em;
+}
+.markdown-content h4 {
+  font-size: 1em;
+}
 
 .markdown-content ul,
 .markdown-content ol {
@@ -2240,7 +2255,7 @@ textarea {
   padding: 4px 10px;
   font-size: 11px;
   font-weight: 500;
-  background: #fff176;  /* Classic sticky note yellow */
+  background: #fff176; /* Classic sticky note yellow */
   color: #1a1a1a;
   border-radius: 3px;
   white-space: nowrap;

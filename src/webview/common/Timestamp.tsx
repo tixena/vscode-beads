@@ -4,7 +4,8 @@
  * Handles timezone-aware display and sorting of ISO 8601 timestamps.
  */
 
-import React, { useRef, useState, useEffect } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface TimestampProps {
   value: string | undefined | null;
@@ -25,10 +26,7 @@ const AUTO_DATETIME_WIDTH = 120;
  * Displays a timestamp in the user's local timezone.
  * Accepts ISO 8601 strings with any timezone offset.
  */
-export function Timestamp({
-  value,
-  format = "date",
-}: TimestampProps): React.ReactElement {
+export function Timestamp({ value, format = "date" }: TimestampProps): React.ReactElement {
   const spanRef = useRef<HTMLSpanElement>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
 
@@ -53,16 +51,18 @@ export function Timestamp({
   }, [format]);
 
   if (!value) {
-    return <span className="timestamp timestamp-empty" ref={spanRef}>-</span>;
+    return (
+      <span className="timestamp timestamp-empty" ref={spanRef}>
+        -
+      </span>
+    );
   }
 
   const date = new Date(value);
 
   // Determine effective format for auto mode
   const effectiveFormat: "date" | "datetime" | "relative" =
-    format === "auto"
-      ? (containerWidth >= AUTO_DATETIME_WIDTH ? "datetime" : "date")
-      : format;
+    format === "auto" ? (containerWidth >= AUTO_DATETIME_WIDTH ? "datetime" : "date") : format;
 
   const formatted = formatTimestamp(date, effectiveFormat);
   const fullDateTime = date.toLocaleString();
@@ -77,10 +77,7 @@ export function Timestamp({
 /**
  * Format a Date object for display.
  */
-function formatTimestamp(
-  date: Date,
-  format: "date" | "datetime" | "relative"
-): string {
+function formatTimestamp(date: Date, format: "date" | "datetime" | "relative"): string {
   switch (format) {
     case "datetime":
       // Format without comma: "12/5/2025 12:22 AM"

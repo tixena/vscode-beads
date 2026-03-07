@@ -5,9 +5,9 @@
  * Shows a notdef (missing glyph) icon for unknown types.
  */
 
-import React from "react";
-import { TYPE_COLORS, UNKNOWN_TYPE_COLOR } from "../types";
+import type React from "react";
 import { icons } from "../icons";
+import { TYPE_COLORS, UNKNOWN_TYPE_COLOR } from "../types";
 
 interface TypeIconProps {
   type: string;
@@ -15,17 +15,13 @@ interface TypeIconProps {
   colored?: boolean;
 }
 
-export function TypeIcon({
-  type,
-  size = 16,
-  colored = true,
-}: TypeIconProps): React.ReactElement {
+export function TypeIcon({ type, size = 16, colored = true }: TypeIconProps): React.ReactElement {
   // Use known icon or fallback to notdef (missing glyph)
   const svgContent = icons[type as keyof typeof icons] || icons.notdef;
 
   // Use known color or fallback to gray
   const color = colored
-    ? (TYPE_COLORS[type as keyof typeof TYPE_COLORS] || UNKNOWN_TYPE_COLOR)
+    ? TYPE_COLORS[type as keyof typeof TYPE_COLORS] || UNKNOWN_TYPE_COLOR
     : "currentColor";
 
   // Inject fill color into SVG

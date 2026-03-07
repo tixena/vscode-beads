@@ -4,18 +4,15 @@
  * Displays bead status as a colored badge
  */
 
-import React from "react";
-import { BeadStatus, STATUS_LABELS, STATUS_COLORS } from "../types";
+import type React from "react";
+import { type BeadStatus, STATUS_COLORS, STATUS_LABELS } from "../types";
 
 interface StatusBadgeProps {
   status: BeadStatus;
   size?: "small" | "medium" | "large";
 }
 
-export function StatusBadge({
-  status,
-  size = "medium",
-}: StatusBadgeProps): React.ReactElement {
+export function StatusBadge({ status, size = "medium" }: StatusBadgeProps): React.ReactElement {
   const label = STATUS_LABELS[status] || status;
   const color = STATUS_COLORS[status] || "#888888";
 

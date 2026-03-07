@@ -9,10 +9,10 @@
  */
 
 import * as vscode from "vscode";
+import type { BeadsProjectManager } from "../backend/BeadsProjectManager";
+import type { WebviewToExtensionMessage } from "../backend/types";
+import type { Logger } from "../utils/logger";
 import { BaseViewProvider } from "./BaseViewProvider";
-import { BeadsProjectManager } from "../backend/BeadsProjectManager";
-import { WebviewToExtensionMessage } from "../backend/types";
-import { Logger } from "../utils/logger";
 
 export class BeadDetailsViewProvider extends BaseViewProvider {
   protected readonly viewType = "beadsDetails";
@@ -20,11 +20,7 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
   private currentProjectId: string | null = null;
   private loadSequence = 0; // Tracks request order to prevent stale responses
 
-  constructor(
-    extensionUri: vscode.Uri,
-    projectManager: BeadsProjectManager,
-    logger: Logger
-  ) {
+  constructor(extensionUri: vscode.Uri, projectManager: BeadsProjectManager, logger: Logger) {
     super(extensionUri, projectManager, logger.child("Details"));
   }
 
@@ -92,7 +88,9 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
 
       // Check if a newer request has started - if so, discard this stale response
       if (thisRequest !== this.loadSequence) {
-        this.log.debug(`Discarding stale response (request ${thisRequest}, current ${this.loadSequence})`);
+        this.log.debug(
+          `Discarding stale response (request ${thisRequest}, current ${this.loadSequence})`
+        );
         return;
       }
 
@@ -118,9 +116,7 @@ export class BeadDetailsViewProvider extends BaseViewProvider {
     }
   }
 
-  protected async handleCustomMessage(
-    message: WebviewToExtensionMessage
-  ): Promise<void> {
+  protected async handleCustomMessage(message: WebviewToExtensionMessage): Promise<void> {
     const backend = this.projectManager.getBackend();
     if (!backend) {
       return;

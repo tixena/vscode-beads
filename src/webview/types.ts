@@ -109,7 +109,13 @@ export type WebviewMessage =
   | { type: "updateBead"; beadId: string; updates: Partial<Bead> }
   | { type: "createBead"; data: Partial<Bead> }
   | { type: "deleteBead"; beadId: string }
-  | { type: "addDependency"; beadId: string; targetId: string; dependencyType: DependencyType; reverse: boolean }
+  | {
+      type: "addDependency";
+      beadId: string;
+      targetId: string;
+      dependencyType: DependencyType;
+      reverse: boolean;
+    }
   | { type: "removeDependency"; beadId: string; dependsOnId: string }
   | { type: "addComment"; beadId: string; text: string }
   | { type: "openBeadDetails"; beadId: string }
@@ -155,14 +161,24 @@ export const UNKNOWN_PRIORITY_COLOR = "#6b7280"; // gray
 export const UNKNOWN_PRIORITY_TEXT_COLOR = "#ffffff"; // white
 
 export const STATUS_COLORS: Record<BeadStatus, string> = {
-  open: "#10b981",      // green - ready to work
+  open: "#10b981", // green - ready to work
   in_progress: "#3b82f6", // blue
-  blocked: "#ef4444",   // red
-  deferred: "#f59e0b",  // amber
-  closed: "#6b7280",    // gray
+  blocked: "#ef4444", // red
+  deferred: "#f59e0b", // amber
+  closed: "#6b7280", // gray
 };
 
-export type BeadType = "bug" | "feature" | "task" | "epic" | "chore" | "decision" | "gate" | "convoy" | "merge-request" | "molecule";
+export type BeadType =
+  | "bug"
+  | "feature"
+  | "task"
+  | "epic"
+  | "chore"
+  | "decision"
+  | "gate"
+  | "convoy"
+  | "merge-request"
+  | "molecule";
 
 export const TYPE_LABELS: Record<BeadType, string> = {
   bug: "bug",
@@ -178,22 +194,22 @@ export const TYPE_LABELS: Record<BeadType, string> = {
 };
 
 export const TYPE_COLORS: Record<BeadType, string> = {
-  bug: "#dc2626",           // red
-  feature: "#16a34a",       // green
-  task: "#eab308",          // yellow
-  epic: "#9333ea",          // purple
-  chore: "#2563eb",         // blue
-  decision: "#d946ef",      // fuchsia
-  gate: "#f97316",          // orange
-  convoy: "#0d9488",        // teal
+  bug: "#dc2626", // red
+  feature: "#16a34a", // green
+  task: "#eab308", // yellow
+  epic: "#9333ea", // purple
+  chore: "#2563eb", // blue
+  decision: "#d946ef", // fuchsia
+  gate: "#f97316", // orange
+  convoy: "#0d9488", // teal
   "merge-request": "#0ea5e9", // sky blue
-  molecule: "#14b8a6",      // teal
+  molecule: "#14b8a6", // teal
 };
 
 export const TYPE_TEXT_COLORS: Record<BeadType, string> = {
   bug: "#ffffff",
   feature: "#ffffff",
-  task: "#1a1a1a",          // dark on yellow
+  task: "#1a1a1a", // dark on yellow
   epic: "#ffffff",
   chore: "#ffffff",
   decision: "#ffffff",
@@ -234,7 +250,7 @@ export function getTypeSortOrder(type: string | undefined): number {
 /** Sort labels alphabetically (case-insensitive) */
 export function sortLabels(labels: string[] | undefined): string[] {
   if (!labels) return [];
-  return [...labels].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  return [...labels].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 }
 
 // Dependency type labels for display

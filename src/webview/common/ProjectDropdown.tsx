@@ -5,8 +5,8 @@
  * Uses generic Dropdown component for consistent behavior.
  */
 
-import React from "react";
-import { BeadsProject } from "../types";
+import type React from "react";
+import type { BeadsProject } from "../types";
 import { Dropdown, DropdownItem } from "./Dropdown";
 
 interface ProjectDropdownProps {
@@ -72,10 +72,5 @@ interface ConnectionDotProps {
 function ConnectionDot({ status }: ConnectionDotProps): React.ReactElement {
   // Map to CSS classes that already exist (connected=running, error=stopped)
   const cssClass = status === "connected" ? "running" : status === "error" ? "stopped" : "unknown";
-  return (
-    <span
-      className={`daemon-dot ${cssClass}`}
-      title={`Status: ${status}`}
-    />
-  );
+  return <span className={`daemon-dot ${cssClass}`} title={`Status: ${status}`} />;
 }

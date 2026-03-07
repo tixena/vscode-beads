@@ -4,8 +4,13 @@
  * Displays bead priority as a colored badge
  */
 
-import React from "react";
-import { BeadPriority, PRIORITY_LABELS, PRIORITY_COLORS, PRIORITY_TEXT_COLORS } from "../types";
+import type React from "react";
+import {
+  type BeadPriority,
+  PRIORITY_COLORS,
+  PRIORITY_LABELS,
+  PRIORITY_TEXT_COLORS,
+} from "../types";
 
 interface PriorityBadgeProps {
   priority: BeadPriority;

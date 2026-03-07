@@ -8,10 +8,10 @@
 
 import * as vscode from "vscode";
 import { BeadsProjectManager } from "./backend/BeadsProjectManager";
-import { DashboardViewProvider } from "./providers/DashboardViewProvider";
-import { BeadsPanelViewProvider } from "./providers/BeadsPanelViewProvider";
 import { BeadDetailsViewProvider } from "./providers/BeadDetailsViewProvider";
-import { createLogger, Logger } from "./utils/logger";
+import { BeadsPanelViewProvider } from "./providers/BeadsPanelViewProvider";
+import { DashboardViewProvider } from "./providers/DashboardViewProvider";
+import { createLogger, type Logger } from "./utils/logger";
 
 let log: Logger;
 let projectManager: BeadsProjectManager;
@@ -39,23 +39,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   vscode.commands.executeCommand("setContext", "beads.hasSelectedBead", false);
 
   // Create view providers
-  dashboardProvider = new DashboardViewProvider(
-    context.extensionUri,
-    projectManager,
-    log
-  );
+  dashboardProvider = new DashboardViewProvider(context.extensionUri, projectManager, log);
 
-  beadsPanelProvider = new BeadsPanelViewProvider(
-    context.extensionUri,
-    projectManager,
-    log
-  );
+  beadsPanelProvider = new BeadsPanelViewProvider(context.extensionUri, projectManager, log);
 
-  detailsProvider = new BeadDetailsViewProvider(
-    context.extensionUri,
-    projectManager,
-    log
-  );
+  detailsProvider = new BeadDetailsViewProvider(context.extensionUri, projectManager, log);
 
   // Register webview providers
   context.subscriptions.push(
@@ -213,10 +201,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   // Create status bar item
-  statusBarItem = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Left,
-    100
-  );
+  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
   statusBarItem.command = "beads.showBeadsMenu";
   context.subscriptions.push(statusBarItem);
 
@@ -310,14 +295,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   // Show warning if no projects found
   if (projectManager.getProjects().length === 0) {
-    vscode.window.showInformationMessage(
-      "No Beads projects found in the workspace. Initialize a project with `bd init` to get started.",
-      "Learn More"
-    ).then((action) => {
-      if (action === "Learn More") {
-        vscode.env.openExternal(vscode.Uri.parse("https://github.com/steveyegge/beads"));
-      }
-    });
+    vscode.window
+      .showInformationMessage(
+        "No Beads projects found in the workspace. Initialize a project with `bd init` to get started.",
+        "Learn More"
+      )
+      .then((action) => {
+        if (action === "Learn More") {
+          vscode.env.openExternal(vscode.Uri.parse("https://github.com/steveyegge/beads"));
+        }
+      });
   }
 }
 

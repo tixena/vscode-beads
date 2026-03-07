@@ -8,13 +8,13 @@
  * - Periodic polling for change detection
  */
 
-import * as vscode from "vscode";
-import * as path from "path";
-import * as fs from "fs";
 import * as crypto from "crypto";
-import { BeadsProject } from "./types";
+import * as fs from "fs";
+import * as path from "path";
+import * as vscode from "vscode";
+import type { Logger } from "../utils/logger";
 import { BeadsCliBackend } from "./BeadsCliBackend";
-import { Logger } from "../utils/logger";
+import type { BeadsProject } from "./types";
 
 const ACTIVE_PROJECT_KEY = "beads.activeProjectId";
 
@@ -73,11 +73,7 @@ export class BeadsProjectManager implements vscode.Disposable {
       try {
         const stats = await fs.promises.stat(beadsDir);
         if (stats.isDirectory()) {
-          const project = this.createProjectFromPath(
-            folder.uri.fsPath,
-            beadsDir,
-            folder.name
-          );
+          const project = this.createProjectFromPath(folder.uri.fsPath, beadsDir, folder.name);
           discoveredProjects.push(project);
           this.log.info(`Found project: ${project.name} at ${project.rootPath}`);
         }
@@ -172,7 +168,9 @@ export class BeadsProjectManager implements vscode.Disposable {
       this.log.info("CLI backend healthy");
     } else {
       project.connectionStatus = "error";
-      this.log.warn("CLI backend health check failed - bd may not be installed or .beads not initialized");
+      this.log.warn(
+        "CLI backend health check failed - bd may not be installed or .beads not initialized"
+      );
     }
 
     // Start polling for changes

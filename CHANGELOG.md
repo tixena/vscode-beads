@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-03-07
+
+### Changed
+
+- Replaced ESLint with Biome for linting and formatting
+- Upgraded dependencies: React 18→19, esbuild 0.19→0.27, TypeScript 5.3→5.9, Jest 29→30, and others
+
+### Fixed
+
+- Add `--tree=0` flag to `bd list` CLI call to disable tree output in `BeadsCliBackend`
+
+### Removed
+
+- ESLint configuration and dependencies (`eslint`, `@typescript-eslint/*`)
+
 ## [0.13.0-dev.2] - 2026-02-28
 
 ### Added

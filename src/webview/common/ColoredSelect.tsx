@@ -6,9 +6,10 @@
  * Built on generic Dropdown for consistent behavior.
  */
 
-import React, { useState, useRef, ReactNode } from "react";
-import { ChevronIcon } from "./ChevronIcon";
+import type React from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { useClickOutside } from "../hooks/useClickOutside";
+import { ChevronIcon } from "./ChevronIcon";
 
 export interface ColoredSelectOption<T extends string | number> {
   value: T;
@@ -99,16 +100,22 @@ export function ColoredSelect<T extends string | number>({
         type="button"
         className={`colored-select-trigger dropdown-trigger ${hasCustomTrigger ? "colored-select-trigger-custom" : ""}`}
         onClick={() => setIsOpen(!isOpen)}
-        style={!renderTrigger && variant === "filter-chip" ? {
-          "--chip-accent-color": selectedOption.color,
-        } as React.CSSProperties : undefined}
+        style={
+          !renderTrigger && variant === "filter-chip"
+            ? ({
+                "--chip-accent-color": selectedOption.color,
+              } as React.CSSProperties)
+            : undefined
+        }
       >
         {renderTrigger ? (
           <>
             {renderTrigger(selectedOption)}
             {showChevron && <ChevronIcon open={isOpen} size={10} />}
           </>
-        ) : defaultTrigger()}
+        ) : (
+          defaultTrigger()
+        )}
       </button>
 
       {isOpen && (

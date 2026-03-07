@@ -5,14 +5,14 @@
  * Used in dependency lists for consistent rendering.
  */
 
-import React from "react";
+import type React from "react";
 import {
-  BeadStatus,
-  BeadPriority,
-  STATUS_LABELS,
-  STATUS_COLORS,
+  type BeadPriority,
+  type BeadStatus,
   PRIORITY_COLORS,
   PRIORITY_TEXT_COLORS,
+  STATUS_COLORS,
+  STATUS_LABELS,
   UNKNOWN_PRIORITY_COLOR,
   UNKNOWN_PRIORITY_TEXT_COLOR,
 } from "../types";
@@ -33,20 +33,15 @@ export function StatusPriorityPill({
   const statusColor = status ? STATUS_COLORS[status] : null;
 
   const priorityLabel = priority !== undefined ? `P${priority}` : "P?";
-  const priorityBgColor = priority !== undefined
-    ? PRIORITY_COLORS[priority]
-    : UNKNOWN_PRIORITY_COLOR;
-  const priorityTextColor = priority !== undefined
-    ? PRIORITY_TEXT_COLORS[priority]
-    : UNKNOWN_PRIORITY_TEXT_COLOR;
+  const priorityBgColor =
+    priority !== undefined ? PRIORITY_COLORS[priority] : UNKNOWN_PRIORITY_COLOR;
+  const priorityTextColor =
+    priority !== undefined ? PRIORITY_TEXT_COLORS[priority] : UNKNOWN_PRIORITY_TEXT_COLOR;
 
   return (
     <span className="status-priority-pill">
       {status && (
-        <span
-          className="pill-status"
-          style={{ backgroundColor: statusColor || undefined }}
-        >
+        <span className="pill-status" style={{ backgroundColor: statusColor || undefined }}>
           {statusLabel}
         </span>
       )}

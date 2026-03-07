@@ -6,8 +6,9 @@
  * Intercepts link clicks to open relative file paths in VS Code.
  */
 
-import React, { useMemo, useCallback } from "react";
 import { marked } from "marked";
+import type React from "react";
+import { useCallback, useMemo } from "react";
 import { vscode } from "../types";
 
 interface MarkdownProps {

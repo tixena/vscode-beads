@@ -10,20 +10,16 @@
  */
 
 import * as vscode from "vscode";
+import type { BeadsProjectManager } from "../backend/BeadsProjectManager";
+import { type Bead, issueToWebviewBead, type WebviewToExtensionMessage } from "../backend/types";
+import type { Logger } from "../utils/logger";
 import { BaseViewProvider } from "./BaseViewProvider";
-import { BeadsProjectManager } from "../backend/BeadsProjectManager";
-import { WebviewToExtensionMessage, Bead, issueToWebviewBead } from "../backend/types";
-import { Logger } from "../utils/logger";
 
 export class BeadsPanelViewProvider extends BaseViewProvider {
   protected readonly viewType = "beadsPanel";
   private selectedBeadId: string | null = null;
 
-  constructor(
-    extensionUri: vscode.Uri,
-    projectManager: BeadsProjectManager,
-    logger: Logger
-  ) {
+  constructor(extensionUri: vscode.Uri, projectManager: BeadsProjectManager, logger: Logger) {
     super(extensionUri, projectManager, logger.child("Panel"));
   }
 
@@ -58,9 +54,7 @@ export class BeadsPanelViewProvider extends BaseViewProvider {
     }
   }
 
-  protected async handleCustomMessage(
-    message: WebviewToExtensionMessage
-  ): Promise<void> {
+  protected async handleCustomMessage(message: WebviewToExtensionMessage): Promise<void> {
     const backend = this.projectManager.getBackend();
     if (!backend) {
       return;
@@ -104,9 +98,7 @@ export class BeadsPanelViewProvider extends BaseViewProvider {
         break;
 
       case "deleteBead":
-        vscode.window.showWarningMessage(
-          "Delete functionality is not yet implemented"
-        );
+        vscode.window.showWarningMessage("Delete functionality is not yet implemented");
         break;
     }
   }

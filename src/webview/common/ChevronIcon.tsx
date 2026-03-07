@@ -2,7 +2,7 @@
  * ChevronIcon - Reusable dropdown chevron SVG
  */
 
-import React from "react";
+import type React from "react";
 
 interface ChevronIconProps {
   open?: boolean;

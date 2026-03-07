@@ -4,7 +4,7 @@
  * Displays a removable filter chip with colored left border accent.
  */
 
-import React from "react";
+import type React from "react";
 
 interface FilterChipProps {
   label: string;
@@ -12,13 +12,9 @@ interface FilterChipProps {
   onRemove?: () => void;
 }
 
-export function FilterChip({
-  label,
-  accentColor,
-  onRemove,
-}: FilterChipProps): React.ReactElement {
+export function FilterChip({ label, accentColor, onRemove }: FilterChipProps): React.ReactElement {
   const style = accentColor
-    ? { "--chip-accent-color": accentColor } as React.CSSProperties
+    ? ({ "--chip-accent-color": accentColor } as React.CSSProperties)
     : undefined;
 
   return (

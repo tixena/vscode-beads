@@ -4,7 +4,7 @@
  * Displayed while data is being loaded
  */
 
-import React from "react";
+import type React from "react";
 
 export function Loading(): React.ReactElement {
   return (

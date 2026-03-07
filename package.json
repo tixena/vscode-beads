@@ -2,7 +2,7 @@
   "name": "vscode-beads-tixena-labs",
   "displayName": "Beads (Tixena Labs)",
   "description": "VS Code extension for managing Beads issues. Unofficial fork of jdillon/vscode-beads with CLI backend support.",
-  "version": "0.13.0-dev.2",
+  "version": "0.14.0",
   "publisher": "tixena-labs",
   "license": "Apache-2.0",
   "icon": "resources/icon.png",
@@ -179,30 +179,28 @@
     "watch": "concurrently \"bun run watch:extension\" \"bun run watch:webview\"",
     "watch:extension": "bun run compile:extension -- --watch --sourcemap",
     "watch:webview": "bun run compile:webview -- --watch --sourcemap",
-    "lint": "eslint src --ext ts,tsx",
+    "lint": "bunx --bun biome check --write --diagnostic-level=error",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "vscode:prepublish": "bun run compile",
     "package": "vsce package"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/react": "^18.2.45",
-    "@types/react-dom": "^18.2.18",
+    "@types/node": "^25.3.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.85.0",
-    "@typescript-eslint/eslint-plugin": "^6.14.0",
-    "@typescript-eslint/parser": "^6.14.0",
-    "concurrently": "^8.2.2",
-    "esbuild": "^0.19.10",
-    "eslint": "^8.56.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.1",
-    "typescript": "^5.3.3"
+    "@biomejs/biome": "^2.3.14",
+    "concurrently": "^9.2.1",
+    "esbuild": "^0.27.3",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
-    "lucide-react": "^0.575.0",
-    "marked": "^17.0.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "lucide-react": "^0.577.0",
+    "marked": "^17.0.4",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   }
 }

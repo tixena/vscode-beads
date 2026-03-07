@@ -5,12 +5,13 @@
  * Supports drag-and-drop to change status.
  */
 
-import React, { useState, useMemo } from "react";
-import { Bead, BeadStatus, BeadType, STATUS_LABELS, STATUS_COLORS } from "../types";
-import { TypeIcon } from "../common/TypeIcon";
-import { PriorityBadge } from "../common/PriorityBadge";
-import { LabelBadge } from "../common/LabelBadge";
+import type React from "react";
+import { useMemo, useState } from "react";
 import { Icon } from "../common/Icon";
+import { LabelBadge } from "../common/LabelBadge";
+import { PriorityBadge } from "../common/PriorityBadge";
+import { TypeIcon } from "../common/TypeIcon";
+import { type Bead, type BeadStatus, type BeadType, STATUS_COLORS, STATUS_LABELS } from "../types";
 
 interface KanbanBoardProps {
   beads: Bead[];
@@ -25,9 +26,18 @@ interface KanbanBoardProps {
 
 const COLUMNS: BeadStatus[] = ["open", "in_progress", "blocked", "deferred", "closed"];
 
-export function KanbanBoard({ beads, selectedBeadId, onSelectBead, onUpdateBead, hasActiveFilters, unfilteredCounts }: KanbanBoardProps): React.ReactElement {
+export function KanbanBoard({
+  beads,
+  selectedBeadId,
+  onSelectBead,
+  onUpdateBead,
+  hasActiveFilters,
+  unfilteredCounts,
+}: KanbanBoardProps): React.ReactElement {
   // Track which columns are collapsed (closed is collapsed by default)
-  const [collapsedColumns, setCollapsedColumns] = useState<Set<BeadStatus>>(new Set(["deferred", "closed"]));
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<BeadStatus>>(
+    new Set(["deferred", "closed"])
+  );
   // Track which column is being dragged over
   const [dragOverColumn, setDragOverColumn] = useState<BeadStatus | null>(null);
   // Optimistic status overrides for instant visual feedback
@@ -97,10 +107,13 @@ export function KanbanBoard({ beads, selectedBeadId, onSelectBead, onUpdateBead,
   };
 
   // Group beads by status (using effective beads with optimistic overrides)
-  const grouped = COLUMNS.reduce((acc, status) => {
-    acc[status] = effectiveBeads.filter((b) => b.status === status);
-    return acc;
-  }, {} as Record<BeadStatus, Bead[]>);
+  const grouped = COLUMNS.reduce(
+    (acc, status) => {
+      acc[status] = effectiveBeads.filter((b) => b.status === status);
+      return acc;
+    },
+    {} as Record<BeadStatus, Bead[]>
+  );
 
   return (
     <div className="kanban-board">
@@ -118,10 +131,7 @@ export function KanbanBoard({ beads, selectedBeadId, onSelectBead, onUpdateBead,
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, status)}
           >
-            <div
-              className="kanban-column-header"
-              onClick={() => toggleColumn(status)}
-            >
+            <div className="kanban-column-header" onClick={() => toggleColumn(status)}>
               <span className="kanban-column-title">{STATUS_LABELS[status]}</span>
               <span className="kanban-column-count">
                 {hasActiveFilters && unfilteredCounts && unfilteredCounts[status] !== items.length
@@ -145,7 +155,9 @@ export function KanbanBoard({ beads, selectedBeadId, onSelectBead, onUpdateBead,
                     </div>
                     <div className="kanban-card-title">{bead.title}</div>
                     <div className="kanban-card-meta">
-                      {bead.priority !== undefined && <PriorityBadge priority={bead.priority} size="small" />}
+                      {bead.priority !== undefined && (
+                        <PriorityBadge priority={bead.priority} size="small" />
+                      )}
                       {bead.assignee && (
                         <>
                           <Icon name="user" size={10} className="kanban-card-icon" />
@@ -160,7 +172,9 @@ export function KanbanBoard({ beads, selectedBeadId, onSelectBead, onUpdateBead,
                             <LabelBadge key={label} label={label} />
                           ))}
                           {bead.labels.length > 3 && (
-                            <span className="kanban-card-labels-more">+{bead.labels.length - 3}</span>
+                            <span className="kanban-card-labels-more">
+                              +{bead.labels.length - 3}
+                            </span>
                           )}
                         </>
                       )}

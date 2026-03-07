@@ -9,12 +9,9 @@
  */
 
 import * as vscode from "vscode";
-import { BeadsProjectManager } from "../backend/BeadsProjectManager";
-import {
-  ExtensionToWebviewMessage,
-  WebviewToExtensionMessage,
-} from "../backend/types";
-import { Logger } from "../utils/logger";
+import type { BeadsProjectManager } from "../backend/BeadsProjectManager";
+import type { ExtensionToWebviewMessage, WebviewToExtensionMessage } from "../backend/types";
+import type { Logger } from "../utils/logger";
 
 export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
   protected _view?: vscode.WebviewView;
@@ -23,11 +20,7 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
   protected readonly log: Logger;
   protected abstract readonly viewType: string;
 
-  constructor(
-    extensionUri: vscode.Uri,
-    projectManager: BeadsProjectManager,
-    logger: Logger
-  ) {
+  constructor(extensionUri: vscode.Uri, projectManager: BeadsProjectManager, logger: Logger) {
     this.extensionUri = extensionUri;
     this.projectManager = projectManager;
     this.log = logger;
@@ -89,7 +82,8 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
     // Send settings
     const config = vscode.workspace.getConfiguration("beads");
     // User ID: prefer setting, fallback to $USER, then "unknown"
-    const userId = config.get<string>("userId", "") || process.env.USER || process.env.USERNAME || "unknown";
+    const userId =
+      config.get<string>("userId", "") || process.env.USER || process.env.USERNAME || "unknown";
     this.postMessage({
       type: "setSettings",
       settings: {
@@ -157,9 +151,7 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
   /**
    * Override in subclasses to handle view-specific messages
    */
-  protected async handleCustomMessage(
-    _message: WebviewToExtensionMessage
-  ): Promise<void> {
+  protected async handleCustomMessage(_message: WebviewToExtensionMessage): Promise<void> {
     // Default: do nothing
   }
 
@@ -199,6 +191,7 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
         );
       }
     } catch (err) {
+      console.error("Failed to open file:", err);
       vscode.window.showWarningMessage(`File not found: ${filePath}`);
     }
   }
@@ -276,8 +269,7 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
    */
   private getNonce(): string {
     let text = "";
-    const possible =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     for (let i = 0; i < 32; i++) {
       text += possible.charAt(Math.floor(Math.random() * possible.length));
     }
